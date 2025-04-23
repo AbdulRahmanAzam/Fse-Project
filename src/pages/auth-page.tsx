@@ -12,6 +12,7 @@ import type { ApiResponse, ApiResponseError } from '@/lib/api.d'
 import { useMutation } from '@tanstack/react-query'
 import { useToast } from '@/components/ui/use-toast'
 import { useAuthStore } from '@/lib/store'
+import { AxiosResponse } from 'axios'
 
 const websiteRules = [
   "Be respectful and considerate towards all community members",
@@ -67,7 +68,7 @@ const AuthPage = () => {
     mutationFn: (data: LoginFormData) => {
       return api.post('/user/login', data);
     },
-    onSuccess: (data: ApiResponse) => {
+    onSuccess: ({ data }: AxiosResponse<any, any>) => {
       login(data.user, data.token);
     },
     onError: (error: ApiResponseError) => {

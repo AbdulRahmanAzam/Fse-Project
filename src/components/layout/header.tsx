@@ -158,7 +158,7 @@ const Header = () => {
           </Dialog>
 
           {/* Notifications */}
-          <DropdownMenu>
+          {user?.role === 'admin' && <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="relative">
                 <Bell className="h-5 w-5" />
@@ -193,7 +193,7 @@ const Header = () => {
                 </Button>
               </div>
             </DropdownMenuContent>
-          </DropdownMenu>
+          </DropdownMenu>}
 
           {/* Profile or Auth */}
           {!!user ? (
@@ -266,11 +266,6 @@ const Header = () => {
                     <img src="/src/assets/genz-logo2.png" alt="Logo" className="h-8 w-8" />
                     <span className="text-xl font-bold">GenZ Scholars</span>
                   </div>
-                  {/* <SheetClose asChild>
-                    <Button variant="ghost" size="icon">
-                      <X className="h-5 w-5" />
-                    </Button>
-                  </SheetClose> */}
                 </div>
                 
                 {!!user && (

@@ -19,9 +19,7 @@ api.interceptors.request.use(
 );
 
 api.interceptors.response.use(
-  (response) => {
-    return { status: response.status, ...response.data };
-  },
+  (response) => response,
   (error) => {
     const { response } = error;
     
@@ -35,6 +33,7 @@ api.interceptors.response.use(
       name: response?.data?.error?.name || 'INTERNAL_SERVER_ERROR',
       message: response?.data?.error?.message || 'An unknown error occurred',
       info: response?.data?.error?.info,
+      stack: response?.data?.error?.stack,
     });
   }
 );
