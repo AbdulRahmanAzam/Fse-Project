@@ -1,186 +1,112 @@
 import { useState } from 'react'
-import { useTheme } from '../components/theme/theme-provider'
-import { Button } from '../components/ui/button'
-import { Input } from '../components/ui/input'
-import { Label } from '../components/ui/label'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs'
-import { Eye, EyeOff, Github, Mail, Lock, Loader2 } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { ModeToggle } from '@/components/theme/mode-toggle'
+import { Eye, EyeOff, Mail, Lock, Loader2 } from 'lucide-react'
 import { useNavigate, Link } from 'react-router-dom'
+import { useForm } from 'react-hook-form'
+import api from '@/lib/api'
+import type { ApiResponse, ApiResponseError } from '@/lib/api.d'
+import { useMutation } from '@tanstack/react-query'
+import { useToast } from '@/components/ui/use-toast'
+import { useAuthStore } from '@/lib/store'
+
+const websiteRules = [
+  "Be respectful and considerate towards all community members",
+  "Share only accurate and verified information",
+  "Keep personal information private and secure",
+  "Engage actively with educational content",
+  "Participate in university events and discussions",
+  "Support fellow students and faculty members"
+]
+
+const teamMembers = [
+  {
+    username: 'Fasih Hasan',
+    role: 'Frontend Developer',
+    avatar: '/src/assets/fasih.jpeg'
+  },
+  {
+    username: 'Abdul Rahman Azam',
+    role: 'Lead Developer',
+    avatar: '/src/assets/abdulrahmanazam.png'
+  },
+  {
+    username: 'Muhammed Owais',
+    role: 'Backend Developer',
+    avatar: '/src/assets/owais.jpeg'
+  }
+]
+
+type LoginFormData = {
+  email: string
+  password: string
+}
+
+type RegisterFormData = {
+  email: string
+  password: string
+  username: string
+  confirmPassword: string
+}
+
+const emailRegex = /^[a-zA-Z0-9._%+-]+@\S+.\S+$/
+const usernameRegex = /^[a-zA-Z0-9_]+$/
 
 const AuthPage = () => {
-  const { theme } = useTheme()
-  const navigate = useNavigate()
-  const [showPassword, setShowPassword] = useState(false)
-  const [isLoginLoading, setIsLoginLoading] = useState(false)
-  const [isRegisterLoading, setIsRegisterLoading] = useState(false)
-  
-  // Login form state
-  const [loginForm, setLoginForm] = useState({
-    email: '',
-    password: ''
-  })
-  
-  // Register form state
-  const [registerForm, setRegisterForm] = useState({
-    name: '',
-    email: '',
-    password: '',
-    confirmPassword: ''
-  })
-  
-  // Validation state
-  const [errors, setErrors] = useState<{[key: string]: string}>({})
-  
-  // Handle login form change
-  const handleLoginChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target
-    setLoginForm({
-      ...loginForm,
-      [name]: value
-    })
-    
-    // Clear error when typing
-    if (errors[name]) {
-      setErrors({
-        ...errors,
-        [name]: ''
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  const { login, setError } = useAuthStore();
+  const [showPassword, setShowPassword] = useState(false);
+  const { register: loginRegister, handleSubmit: handleLoginSubmit, formState: { errors: loginErrors } } = useForm<LoginFormData>();
+  const { register: registerRegister, handleSubmit: handleRegisterSubmit, formState: { errors: registerErrors } } = useForm<RegisterFormData>();
+
+  const { mutate: loginFn, isPending: isLoginLoading } = useMutation({
+    mutationFn: (data: LoginFormData) => {
+      return api.post('/user/login', data);
+    },
+    onSuccess: (data: ApiResponse) => {
+      login(data.user, data.token);
+    },
+    onError: (error: ApiResponseError) => {
+      setError(error.message);
+      toast({
+        title: error.message,
+        description: error.info,
+        variant: 'destructive',
       })
     }
-  }
-  
-  // Handle register form change
-  const handleRegisterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target
-    setRegisterForm({
-      ...registerForm,
-      [name]: value
-    })
-    
-    // Clear error when typing
-    if (errors[name]) {
-      setErrors({
-        ...errors,
-        [name]: ''
-      })
-    }
-  }
-  
-  // Validate login form
-  const validateLogin = () => {
-    const newErrors: {[key: string]: string} = {}
-    
-    if (!loginForm.email.trim()) {
-      newErrors.email = 'Email is required'
-    } else if (!/\S+@\S+\.\S+/.test(loginForm.email)) {
-      newErrors.email = 'Email is invalid'
-    }
-    
-    if (!loginForm.password) {
-      newErrors.password = 'Password is required'
-    }
-    
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
-  
-  // Validate register form
-  const validateRegister = () => {
-    const newErrors: {[key: string]: string} = {}
-    
-    if (!registerForm.name.trim()) {
-      newErrors.name = 'Name is required'
-    }
-    
-    if (!registerForm.email.trim()) {
-      newErrors.email = 'Email is required'
-    } else if (!/\S+@\S+\.\S+/.test(registerForm.email)) {
-      newErrors.email = 'Email is invalid'
-    }
-    
-    if (!registerForm.password) {
-      newErrors.password = 'Password is required'
-    } else if (registerForm.password.length < 8) {
-      newErrors.password = 'Password must be at least 8 characters'
-    }
-    
-    if (registerForm.password !== registerForm.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match'
-    }
-    
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
-  
-  // Handle login submit
-  const handleLoginSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    if (validateLogin()) {
-      setIsLoginLoading(true)
-      // Normally would call API here
-      console.log('Login form submitted:', loginForm)
-      
-      // Redirect to home page on successful login
-      setTimeout(() => {
-        navigate('/', { replace: true })
-        setIsLoginLoading(false)
-      }, 1000)
-    }
-  }
-  
-  // Handle register submit
-  const handleRegisterSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    if (validateRegister()) {
-      setIsRegisterLoading(true)
-      // Normally would call API here
-      console.log('Register form submitted:', registerForm)
-      
-      // Redirect to home page on successful registration
-      setTimeout(() => {
-        navigate('/', { replace: true })
-        setIsRegisterLoading(false)
-      }, 1000)
-    }
-  }
-  
-  // Team members data
-  const teamMembers = [
-    {
-      name: 'Fasih Hasan',
-      role: 'Frontend Developer',
-      avatar: '/src/assets/fasih.jpeg'
+  });
+
+  const { mutate: registerFn, isPending: isRegisterLoading } = useMutation({
+    mutationFn: (data: RegisterFormData) => {
+      return api.post('/user/register', data);
     },
-    {
-      name: 'Abdul Rahman Azam',
-      role: 'Lead Developer',
-      avatar: '/src/assets/abdulrahmanazam.png'
+    onSuccess: (data: ApiResponse) => {
+      login(data.user, data.token);
     },
-    {
-      name: 'Muhammed Owais',
-      role: 'Backend Developer',
-      avatar: '/src/assets/owais.jpeg'
+    onError: (error: ApiResponseError) => {
+      setError(error.message);
+      toast({
+        title: error.message,
+        description: error.info,
+        variant: 'destructive',
+      });
     }
-  ]
-  
-  // Website rules
-  const websiteRules = [
-    "Be respectful and considerate towards all community members",
-    "Share only accurate and verified information",
-    "Keep personal information private and secure",
-    "Engage actively with educational content",
-    "Participate in university events and discussions",
-    "Support fellow students and faculty members"
-  ]
+  });
   
   return (
-    <div className="fixed inset-0 flex items-center justify-center p-4 bg-black/50 dark:bg-white/55 backdrop-blur-sm z-50">
-      <div className="w-full max-w-4xl h-auto max-h-[90vh] bg-background/95 dark:bg-background/95 border border-border rounded-xl shadow-2xl flex flex-col md:flex-row overflow-hidden">
+    <div className="fixed inset-0 flex items-center justify-center p-4 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm z-50">
+      <div className="w-full max-w-4xl h-auto max-h-[90vh] bg-background/95 dark:bg-background/95 rounded-xl shadow-2xl flex flex-col md:flex-row overflow-hidden">
         {/* Left panel - Form */}
         <div className="md:w-1/2 p-4 md:p-6 flex items-center justify-center overflow-auto">
           <div className="w-full max-w-md py-2">
-            <div className="text-center mb-4">
+            <div className="text-center mb-4 relative">
+              <div className="absolute right-0 top-0">
+                <ModeToggle />
+              </div>
               <h1 className="text-2xl font-bold text-foreground">GenZ Scholars</h1>
               <p className="text-muted-foreground text-sm mt-1">Connect with your university community</p>
             </div>
@@ -191,24 +117,28 @@ const AuthPage = () => {
                 <TabsTrigger value="signup">Sign Up</TabsTrigger>
               </TabsList>
               
+              {/* Sign in tab */}
               <TabsContent value="signin">
-                <form onSubmit={handleLoginSubmit} className="space-y-3">
+                <form onSubmit={handleLoginSubmit(data => loginFn(data))} className="space-y-3">
                   <div className="space-y-2">
                     <Label htmlFor="email" className="text-sm text-foreground">Email</Label>
                     <div className="relative">
                       <Mail className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                       <Input
                         id="email"
-                        name="email"
-                        type="email"
+                        {...loginRegister("email", {
+                          required: "Email is required",
+                          pattern: {
+                            value: emailRegex,
+                            message: "Invalid email address"
+                          }
+                        })}
                         placeholder="university.email@edu.in"
                         className="pl-10 h-9"
-                        value={loginForm.email}
-                        onChange={handleLoginChange}
                         disabled={isLoginLoading}
                       />
                     </div>
-                    {errors.email && <p className="text-xs text-red-500 dark:text-red-400">{errors.email}</p>}
+                    {loginErrors.email && <p className="text-xs text-red-500 dark:text-red-400">{loginErrors.email.message}</p>}
                   </div>
                   
                   <div className="space-y-2">
@@ -222,12 +152,16 @@ const AuthPage = () => {
                       <Lock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                       <Input
                         id="password"
-                        name="password"
+                        {...loginRegister("password", {
+                          required: "Password is required",
+                          minLength: {
+                            value: 8,
+                            message: "Password must be at least 8 characters"
+                          }
+                        })}
                         type={showPassword ? "text" : "password"}
                         placeholder="••••••••"
                         className="pl-10 h-9"
-                        value={loginForm.password}
-                        onChange={handleLoginChange}
                         disabled={isLoginLoading}
                       />
                       <button
@@ -243,11 +177,15 @@ const AuthPage = () => {
                         )}
                       </button>
                     </div>
-                    {errors.password && <p className="text-xs text-red-500 dark:text-red-400">{errors.password}</p>}
+                    {loginErrors.password && <p className="text-xs text-red-500 dark:text-red-400">{loginErrors.password.message}</p>}
                   </div>
                   
-                  <Button type="submit" className="w-full h-9 text-sm" disabled={isLoginLoading}>
-                    {isLoginLoading ? (
+                  <Button
+                    type="submit"
+                    className="w-full h-9 text-sm"
+                    disabled={isLoginLoading}
+                  >
+                    {false ? (
                       <>
                         <Loader2 className="mr-2 h-3 w-3 animate-spin" />
                         Signing in...
@@ -257,7 +195,8 @@ const AuthPage = () => {
                     )}
                   </Button>
                   
-                  <div className="relative my-3">
+                  {/* Not using github auth for now */}
+                  {/* <div className="relative my-3">
                     <div className="absolute inset-0 flex items-center">
                       <div className="w-full border-t border-border"></div>
                     </div>
@@ -266,27 +205,41 @@ const AuthPage = () => {
                     </div>
                   </div>
                   
-                  <Button variant="outline" className="w-full h-9 text-sm" type="button" disabled={isLoginLoading}>
+                  <Button
+                    variant="outline"
+                    className="w-full h-9 text-sm"
+                    type="button"
+                    disabled={isLoginLoading}
+                  >
                     <Github className="mr-2 h-3 w-3" />
                     Github
-                  </Button>
+                  </Button> */}
                 </form>
               </TabsContent>
               
+              {/* Sign up tab */}
               <TabsContent value="signup">
-                <form onSubmit={handleRegisterSubmit} className="space-y-3">
+                <form onSubmit={handleRegisterSubmit(data => registerFn(data))} className="space-y-3">
                   <div className="space-y-2">
-                    <Label htmlFor="name" className="text-sm text-foreground">Full Name</Label>
+                    <Label htmlFor="username" className="text-sm text-foreground">Username</Label>
                     <Input
-                      id="name"
-                      name="name"
-                      placeholder="John Doe"
+                      id="username"
+                      {...registerRegister("username", {
+                        required: "Username is required",
+                        minLength: {
+                          value: 3,
+                          message: "Username must be at least 3 characters"
+                        },
+                        pattern: {
+                          value: usernameRegex,
+                          message: "Username must contain only letters, numbers and underscores"
+                        }
+                      })}
+                      placeholder="john_doe"
                       className="h-9"
-                      value={registerForm.name}
-                      onChange={handleRegisterChange}
                       disabled={isRegisterLoading}
                     />
-                    {errors.name && <p className="text-xs text-red-500 dark:text-red-400">{errors.name}</p>}
+                    {registerErrors.username && <p className="text-xs text-red-500 dark:text-red-400">{registerErrors.username.message}</p>}
                   </div>
                   
                   <div className="space-y-2">
@@ -295,16 +248,19 @@ const AuthPage = () => {
                       <Mail className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                       <Input
                         id="register-email"
-                        name="email"
-                        type="email"
+                        {...registerRegister("email", {
+                          required: "Email is required",
+                          pattern: {
+                            value: emailRegex,
+                            message: "Email must be a valid NU email"
+                          }
+                        })}
                         placeholder="university.email@edu.in"
                         className="pl-10 h-9"
-                        value={registerForm.email}
-                        onChange={handleRegisterChange}
                         disabled={isRegisterLoading}
                       />
                     </div>
-                    {errors.email && <p className="text-xs text-red-500 dark:text-red-400">{errors.email}</p>}
+                    {registerErrors.email && <p className="text-xs text-red-500 dark:text-red-400">{registerErrors.email.message}</p>}
                   </div>
                   
                   <div className="space-y-2">
@@ -313,12 +269,16 @@ const AuthPage = () => {
                       <Lock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                       <Input
                         id="register-password"
-                        name="password"
+                        {...registerRegister("password", {
+                          required: "Password is required",
+                          minLength: {
+                            value: 8,
+                            message: "Password must be at least 8 characters"
+                          }
+                        })}
                         type={showPassword ? "text" : "password"}
                         placeholder="••••••••"
                         className="pl-10 h-9"
-                        value={registerForm.password}
-                        onChange={handleRegisterChange}
                         disabled={isRegisterLoading}
                       />
                       <button
@@ -334,22 +294,29 @@ const AuthPage = () => {
                         )}
                       </button>
                     </div>
-                    {errors.password && <p className="text-xs text-red-500 dark:text-red-400">{errors.password}</p>}
+                    {registerErrors.password && <p className="text-xs text-red-500 dark:text-red-400">{registerErrors.password.message}</p>}
                   </div>
                   
                   <div className="space-y-2">
                     <Label htmlFor="confirm-password" className="text-sm text-foreground">Confirm Password</Label>
-                    <Input
-                      id="confirm-password"
-                      name="confirmPassword"
-                      type="password"
-                      placeholder="••••••••"
-                      className="h-9"
-                      value={registerForm.confirmPassword}
-                      onChange={handleRegisterChange}
-                      disabled={isRegisterLoading}
-                    />
-                    {errors.confirmPassword && <p className="text-xs text-red-500 dark:text-red-400">{errors.confirmPassword}</p>}
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="confirm-password"
+                        {...registerRegister("confirmPassword", {
+                          required: "Confirm password is required",
+                          validate: (value, data) => {
+                            if (value !== data.password)
+                              return "Passwords do not match"
+                          }
+                        })}
+                        type="password"
+                        placeholder="••••••••"
+                        className="pl-10 h-9"
+                        disabled={isRegisterLoading}
+                      />
+                    </div>
+                    {registerErrors.confirmPassword && <p className="text-xs text-red-500 dark:text-red-400">{registerErrors.confirmPassword.message}</p>}
                   </div>
                   
                   <Button type="submit" className="w-full h-9 text-sm" disabled={isRegisterLoading}>
@@ -386,11 +353,11 @@ const AuthPage = () => {
                       <div className="w-12 h-12 md:w-16 md:h-16 rounded-full overflow-hidden border-2 border-primary-foreground/30 bg-primary-foreground/10 mx-auto">
                         <img 
                           src={member.avatar} 
-                          alt={member.name} 
+                          alt={member.username} 
                           className="w-full h-full object-cover"
                         />
                       </div>
-                      <p className="font-medium mt-1 text-sm">{member.name}</p>
+                      <p className="font-medium mt-1 text-sm">{member.username}</p>
                       <p className="text-xs opacity-90">{member.role}</p>
                     </div>
                   ))}
@@ -411,9 +378,10 @@ const AuthPage = () => {
               </div>
             </div>
             
-            <div className="mt-auto text-center opacity-75 text-xs">
+            {/* CSS looks off for it so I commented it out for now */}
+            {/* <div className="mt-auto text-center opacity-75 text-xs">
               <p>© {new Date().getFullYear()} GenZ Scholars. All rights reserved.</p>
-            </div>
+            </div> */}
           </div>
         </div>
       </div>

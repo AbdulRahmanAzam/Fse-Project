@@ -3,8 +3,13 @@ import { persist } from 'zustand/middleware';
 
 interface User {
   id: string;
-  name: string;
+  username: string;
   email: string;
+  displayName: string;
+  role: 'member' | 'admin';
+  isAdmin: boolean;
+  createdAt: string;
+  updatedAt: string;
   avatar?: string;
 }
 
@@ -23,77 +28,30 @@ interface Post {
 
 interface AuthState {
   user: User | null;
-  isAuthenticated: boolean;
-  isLoading: boolean;
   error: string | null;
-  login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string) => Promise<void>;
+  login: (user: User, token: string) => void;
   logout: () => void;
-  clearError: () => void;
+  setError: (error: string) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       user: null,
-      isAuthenticated: false,
-      isLoading: false,
       error: null,
-      login: async (email, password) => {
-        set({ isLoading: true, error: null });
-        try {
-          // This would be replaced with an actual API call
-          // const response = await api.post('/auth/login', { email, password });
-          // const { user, token } = response.data;
-          
-          // Mock user for now
-          const user = { 
-            id: '1', 
-            name: 'Test User', 
-            email: email 
-          };
-          
-          // localStorage.setItem('auth_token', token);
-          set({ user, isAuthenticated: true, isLoading: false });
-        } catch (error: any) {
-          set({ 
-            error: error.response?.data?.message || 'Login failed', 
-            isLoading: false 
-          });
-        }
+      login: (user: User, token: string) => {
+        set({ user: { ...user, isAdmin: user.role === 'admin' } });
+        localStorage.setItem('auth_token', token);
       },
-      register: async (name, email, password) => {
-        set({ isLoading: true, error: null });
-        try {
-          // This would be replaced with an actual API call
-          // const response = await api.post('/auth/register', { name, email, password });
-          // const { user, token } = response.data;
-          
-          // Mock user for now
-          const user = { 
-            id: '1', 
-            name: name, 
-            email: email 
-          };
-          
-          // localStorage.setItem('auth_token', token);
-          set({ user, isAuthenticated: true, isLoading: false });
-        } catch (error: any) {
-          set({ 
-            error: error.response?.data?.message || 'Registration failed', 
-            isLoading: false 
-          });
-        }
-      },
+      setError: (error: string) => set({ error }),
       logout: () => {
         localStorage.removeItem('auth_token');
-        set({ user: null, isAuthenticated: false });
+        set({ user: null });
       },
-      clearError: () => set({ error: null }),
     }),
     {
       name: 'auth-storage',
-      partialize: (state) => ({ user: state.user, isAuthenticated: state.isAuthenticated }),
+      partialize: (state) => ({ user: state.user }),
     }
   )
 );
@@ -154,7 +112,7 @@ export const usePostsStore = create<PostsState>((set, get) => ({
         id: Date.now().toString(),
         content,
         authorId: user.id,
-        authorName: user.name,
+        authorName: user.username,
         authorAvatar: user.avatar,
         createdAt: new Date().toISOString(),
         likes: 0,

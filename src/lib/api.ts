@@ -1,14 +1,12 @@
 import axios from 'axios';
 
-// Create an axios instance with default config
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api',
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000',
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Request interceptor for adding auth token
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('auth_token');
@@ -20,19 +18,24 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response interceptor for handling errors
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    return { status: response.status, ...response.data };
+  },
   (error) => {
     const { response } = error;
     
-    // Handle session expiration or unauthorized access
-    if (response && response.status === 401) {
+    if (response && response.status === 401 && window.location.pathname !== '/auth') {
       localStorage.removeItem('auth_token');
-      window.location.href = '/login';
+      window.location.href = '/auth';
     }
     
-    return Promise.reject(error);
+    return Promise.reject({
+      status: response?.status || 500,
+      name: response?.data?.error?.name || 'INTERNAL_SERVER_ERROR',
+      message: response?.data?.error?.message || 'An unknown error occurred',
+      info: response?.data?.error?.info,
+    });
   }
 );
 

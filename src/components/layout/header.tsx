@@ -9,8 +9,7 @@ import {
   Moon, 
   User, 
   Handshake, 
-  Menu, 
-  X,
+  Menu,
   ChevronDown
 } from 'lucide-react'
 import { useTheme } from '../theme/theme-provider'
@@ -29,8 +28,8 @@ import { Input } from '../ui/input'
 import { 
   Sheet, 
   SheetContent, 
-  SheetTrigger, 
-  SheetClose 
+  SheetTrigger,
+  SheetTitle
 } from '../ui/sheet'
 
 import { 
@@ -42,6 +41,7 @@ import {
 } from '../ui/dialog'
 
 import { useAuthStore } from '@/lib/store'
+import { ModeToggle } from '../theme/mode-toggle'
 
 // Developer information
 const developers = [
@@ -72,9 +72,9 @@ const developers = [
 ];
 
 const Header = () => {
-  const { theme, setTheme } = useTheme()
-  const { user, isAuthenticated, logout } = useAuthStore()
-  const [searchQuery, setSearchQuery] = useState('')
+  const { theme, setTheme } = useTheme();
+  const { user, logout } = useAuthStore();
+  const [searchQuery, setSearchQuery] = useState('');
   
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark')
@@ -114,9 +114,7 @@ const Header = () => {
         {/* Desktop Navigation */}
         <div className="hidden md:flex items-center gap-4">
           {/* Theme Toggle */}
-          <Button variant="ghost" size="icon" onClick={toggleTheme} title="Toggle theme">
-            {theme === 'dark' ? (<Sun className="h-5 w-5" />) : (<Moon className="h-5 w-5" />)}
-          </Button>
+          <ModeToggle />
 
           {/* About Developer */}
           <Dialog>
@@ -198,18 +196,18 @@ const Header = () => {
           </DropdownMenu>
 
           {/* Profile or Auth */}
-          {isAuthenticated ? (
+          {!!user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" className="gap-2">
                   <div className="h-8 w-8 rounded-full bg-muted overflow-hidden">
-                    {user?.avatar ? (
-                      <img src={user.avatar} alt={user.name} className="h-full w-full object-cover" />
+                    {user.avatar ? (
+                      <img src={user.avatar} alt={user.username} className="h-full w-full object-cover" />
                     ) : (
                       <User className="h-4 w-4 mx-auto my-2" />
                     )}
                   </div>
-                  <span className="max-w-[100px] truncate hidden sm:inline-block">{user?.name}</span>
+                  <span className="max-w-[100px] truncate hidden sm:inline-block">{user.displayName || user.username}</span>
                   <ChevronDown className="h-4 w-4 hidden sm:block" />
                 </Button>
               </DropdownMenuTrigger>
@@ -241,11 +239,11 @@ const Header = () => {
         <div className="md:hidden">
           <Sheet>
             <SheetTrigger asChild>
-              {isAuthenticated ? (
+              {!!user ? (
                 <Button variant="ghost" size="icon" className="relative">
                   <div className="h-8 w-8 rounded-full bg-muted overflow-hidden">
-                    {user?.avatar ? (
-                      <img src={user.avatar} alt={user.name} className="h-full w-full object-cover" />
+                    {user.avatar ? (
+                      <img src={user.avatar} alt={user.username} className="h-full w-full object-cover" />
                     ) : (
                       <User className="h-4 w-4 mx-auto my-2" />
                     )}
@@ -260,6 +258,7 @@ const Header = () => {
                 </Button>
               )}
             </SheetTrigger>
+            <SheetTitle className="sr-only">GenZ Scholars</SheetTitle>
             <SheetContent side="right">
               <div className="flex flex-col h-full">
                 <div className="flex justify-between items-center py-4">
@@ -267,25 +266,25 @@ const Header = () => {
                     <img src="/src/assets/genz-logo2.png" alt="Logo" className="h-8 w-8" />
                     <span className="text-xl font-bold">GenZ Scholars</span>
                   </div>
-                  <SheetClose asChild>
+                  {/* <SheetClose asChild>
                     <Button variant="ghost" size="icon">
                       <X className="h-5 w-5" />
                     </Button>
-                  </SheetClose>
+                  </SheetClose> */}
                 </div>
                 
-                {isAuthenticated && (
+                {!!user && (
                   <div className="flex items-center gap-3 mb-4 p-3 bg-muted/30 rounded-lg">
                     <div className="h-10 w-10 rounded-full bg-muted overflow-hidden">
-                      {user?.avatar ? (
-                        <img src={user.avatar} alt={user.name} className="h-full w-full object-cover" />
+                      {user.avatar ? (
+                        <img src={user.avatar} alt={user.username} className="h-full w-full object-cover" />
                       ) : (
                         <User className="h-5 w-5 mx-auto my-2.5" />
                       )}
                     </div>
                     <div>
-                      <p className="font-medium">{user?.name}</p>
-                      <p className="text-xs text-muted-foreground">{user?.email}</p>
+                      <p className="font-medium">{user.displayName || user.username}</p>
+                      <p className="text-xs text-muted-foreground">{user.email}</p>
                     </div>
                   </div>
                 )}
@@ -360,7 +359,7 @@ const Header = () => {
                     </span>
                   </Button>
                   
-                  {isAuthenticated ? (
+                  {!!user ? (
                     <>
                       <Button variant="ghost" className="justify-start" asChild>
                         <Link to="/profile">

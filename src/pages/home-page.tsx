@@ -16,7 +16,6 @@ import {
   PlusCircle, 
   X 
 } from 'lucide-react'
-import { Link } from 'react-router-dom'
 
 // Types for special dates
 interface SpecialDate {
