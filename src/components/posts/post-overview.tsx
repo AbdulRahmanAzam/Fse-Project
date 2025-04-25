@@ -5,34 +5,110 @@ import { Button } from "../ui/button";
 import { Collapsible, CollapsibleContent } from "../ui/collapsible";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../ui/dropdown-menu";
 import { Label } from "../ui/label";
-import { MoreHorizontal } from "lucide-react";
+import { MoreHorizontal, MessageCircle, EyeOff, Pencil, Trash2 } from "lucide-react";
 import VoteButtons from "./vote-buttons";
 import { formatTime } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { useMutation } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
+import { useToast } from "../ui/use-toast";
+import api from "@/lib/api";
+import { useAuthStore } from "@/lib/stores/use-auth-store";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../ui/dialog";
 
 const PostOverview = ({
-  post,
-  handleVote,
+  post
 }: {
-  post: Post,
-  handleVote: (postId: number, voteType: 'up' | 'down') => void,
+  post: Post
 }) => {
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const { user } = useAuthStore();
   const voteDifference = post.upvotes - post.downvotes;
   const [isOpen, setIsOpen] = useState(voteDifference >= 0);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const queryClient = useQueryClient();
+
+  const isOwner = user?.id === post.user.id;
+  const canModify = isOwner || user?.isAdmin;
+
+  const { mutate: deletePost } = useMutation({
+    mutationFn: () => api.delete(`/post/${post.id}`),
+    onSuccess: () => {
+      toast({
+        title: 'Success',
+        description: 'Post deleted successfully',
+      });
+      queryClient.invalidateQueries({ queryKey: ['posts'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: error.message || 'Error',
+        description: error.info || 'Failed to delete post',
+        variant: 'destructive'
+      });
+    }
+  });
+
+  const { mutate: votePost } = useMutation({
+    mutationFn: ({ postId, voteType }: { postId: number, voteType: 'up' | 'down' }) => {
+      return api.post(`/post/${voteType === 'up' ? 'upvote' : 'downvote'}/${postId}`);
+    },
+    onMutate: async ({ postId, voteType }) => {
+      await queryClient.cancelQueries({ queryKey: ['posts'] });
+
+      const previousPosts = queryClient.getQueryData(['posts']);
+
+      queryClient.setQueryData(['posts'], (old: any) => {
+        const updatedPosts = old?.data?.posts?.map((post: Post) => {
+          if (post.id === postId) {
+            const isSameVote = post.userVote === voteType;
+            const isSwitchingVote = post.userVote && post.userVote !== voteType;
+
+            return {
+              ...post,
+              upvotes: post.upvotes +
+                (voteType === 'up' ? (isSameVote ? -1 : (isSwitchingVote ? 1 : 1)) : (isSwitchingVote ? -1 : 0)),
+              downvotes: post.downvotes +
+                (voteType === 'down' ? (isSameVote ? -1 : (isSwitchingVote ? 1 : 1)) : (isSwitchingVote ? -1 : 0)),
+              userVote: isSameVote ? undefined : voteType,
+            };
+          }
+          return post;
+        }) || [];
+
+        return { data: { posts: updatedPosts } };
+      });
+
+      return { previousPosts };
+    },
+    onError: (error, _variables, context) => {
+      if (context?.previousPosts)
+        queryClient.setQueryData(['posts'], context.previousPosts);
+
+      error.stack && console.log(error.stack);
+      toast({
+        title: 'Error',
+        description: error.message
+      });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['posts'] });
+    }
+  });
+
+  const handleVote = (postId: number, voteType: 'up' | 'down') => {
+    votePost({ postId, voteType });
+  }
 
   return (
-    <div className="flex items-start gap-1">
-      {!isOpen && <div className='flex items-center gap-1'>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="rounded-full p-0 w-6 h-6 flex items-center justify-center hover:bg-accent/50"
-          onClick={() => setIsOpen(true)}
-        >
-          +
-        </Button>
-        <p className='text-sm text-muted-foreground'>Post hidden</p>
-      </div>}
+    <div className="flex items-start gap-2">
+      {!isOpen && (
+        <div className='flex items-center gap-2 p-2 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-pointer' onClick={() => setIsOpen(true)}>
+          <EyeOff className="h-4 w-4 text-muted-foreground" />
+          <p className='text-sm text-muted-foreground'>Post hidden</p>
+        </div>
+      )}
 
       <div className="flex-1">
         <Collapsible
@@ -40,74 +116,135 @@ const PostOverview = ({
           onOpenChange={setIsOpen}
         >
           <CollapsibleContent>
-            <article key={post.id} className="border border-gray-200 dark:border-gray-800 rounded-lg p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  {post.image ? (
-                    <img src={post.image} alt="Post" className="w-5 h-5 rounded-full" />
-                  ) : (
-                    <div className="rounded-full w-5 h-5 bg-gray-300" />
-                  )}
-                  <Button
-                    variant="link"
-                    className="text-sm"
-                    onClick={() => navigate(`/community/${post.community.id}`)}
-                  >
-                    {post.community.name}
-                  </Button>
-                  <Label className="text-sm text-gray-500">{formatTime(new Date(post.createdAt))}</Label>
-                </div>
-
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 w-8 p-0 hover:bg-accent/50"
-                    >
-                      <MoreHorizontal className="h-4 w-4" />
-                      <span className="sr-only">Open menu</span>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => setIsOpen(false)}>
-                      Hide post
-                    </DropdownMenuItem>
-                    {/* <DropdownMenuItem>
-                      Report
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      Save
-                    </DropdownMenuItem> */}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-
-              <div className="flex flex-col justify-between my-2 space-y-2">
-                <h1 className="text-lg font-bold truncate">{post.title}</h1>
-                <p className="line-clamp-5 text-sm text-gray-700 dark:text-gray-300">{post.content}</p>
-              </div>
-
-              {post.image && (
-                <div className="rounded-lg overflow-hidden mb-4">
-                  <img src={post.image} alt="Post" className="w-full" />
-                </div>
+            <article 
+              key={post.id} 
+              className={cn(
+                "rounded-lg border bg-card hover:border-border/80 transition-colors",
+                "group relative overflow-hidden"
               )}
+            >
+              <div className="px-4 py-3 space-y-3">
+                {/* Header */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2">
+                      {post.image ? (
+                        <img 
+                          src={post.image} 
+                          alt="Post" 
+                          className="w-6 h-6 rounded-full object-cover ring-2 ring-background" 
+                        />
+                      ) : (
+                        <div className="w-6 h-6 rounded-full bg-muted ring-2 ring-background" />
+                      )}
+                      <Button
+                        variant="link"
+                        className="text-sm font-medium p-0 h-auto"
+                        onClick={() => navigate(`/community/${post.community.id}`)}
+                      >
+                        {post.community.name}
+                      </Button>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">
+                        by {post.user.displayName || post.user.username}
+                      </span>
+                      <Label className="text-xs text-muted-foreground">{formatTime(new Date(post.createdAt))}</Label>
+                    </div>
+                  </div>
 
-              <div className="flex items-center space-x-1">
-                <VoteButtons post={post} handleVote={handleVote} />
-                <Button
-                  variant="ghost"
-                  className="text-sm text-gray-500"
-                  onClick={() => { }}
-                >
-                  Comments
-                </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <MoreHorizontal className="h-4 w-4" />
+                        <span className="sr-only">Open menu</span>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      {canModify && (
+                        <>
+                          <DropdownMenuItem onClick={() => navigate(`/community/${post.community.id}/edit-post/${post.id}`)}>
+                            <Pencil className="mr-2 h-4 w-4" />
+                            Edit Post
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            className="text-destructive focus:text-destructive"
+                            onClick={() => setShowDeleteDialog(true)}
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Delete Post
+                          </DropdownMenuItem>
+                        </>
+                      )}
+                      <DropdownMenuItem onClick={() => setIsOpen(false)}>
+                        <EyeOff className="mr-2 h-4 w-4" />
+                        Hide post
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+
+                {/* Content */}
+                <div className="space-y-3">
+                  <h1 className="text-lg font-semibold leading-tight">{post.title}</h1>
+                  <p className="text-sm text-muted-foreground line-clamp-3">{post.content}</p>
+                </div>
+
+                {/* Image */}
+                {post.image && (
+                  <div className="rounded-lg overflow-hidden border">
+                    <img 
+                      src={post.image} 
+                      alt="Post" 
+                      className="w-full h-auto object-cover" 
+                    />
+                  </div>
+                )}
+
+                {/* Footer */}
+                <div className="flex items-center gap-4 pt-2">
+                  <VoteButtons post={post} handleVote={handleVote} />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-muted-foreground hover:text-foreground"
+                    onClick={() => {}}
+                  >
+                    <MessageCircle className="mr-2 h-4 w-4" />
+                    Comments
+                  </Button>
+                </div>
               </div>
             </article>
           </CollapsibleContent>
         </Collapsible>
       </div>
+
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Post</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this post? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={() => {
+              deletePost();
+              setShowDeleteDialog(false);
+            }}>
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

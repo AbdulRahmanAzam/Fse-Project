@@ -35,7 +35,7 @@ export interface Post {
 }
 
 interface User {
-  id: string;
+  id: number;
   username: string;
   email: string;
   displayName: string;

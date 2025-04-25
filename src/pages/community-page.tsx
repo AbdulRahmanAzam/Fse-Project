@@ -2,7 +2,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Community, User } from '@/lib/api.d';
+import { Community, Post, User } from '@/lib/api.d';
 import api from '@/lib/api';
 import { toast } from '@/components/ui/use-toast';
 import { Users, Info, Crown, MoreVertical, Pencil, Trash2, ArrowLeft } from 'lucide-react';
@@ -20,6 +20,7 @@ import CommunityDeleteWarning from '@/components/community/community-delete-warn
 import CommunityEditForm from '@/components/community/community-edit-form';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { useAuthStore } from '@/lib/stores/use-auth-store';
+import PostOverview from '@/components/posts/post-overview';
 
 const useCommunityQuery = (id: string) => {
   const { data, isLoading, error, refetch } = useQuery({
@@ -29,11 +30,20 @@ const useCommunityQuery = (id: string) => {
   return { data: data?.data?.community as Community, isLoading, error, refetch };
 };
 
+const usePostsQuery = (communityId: string) => {
+  const { data, isLoading, error, refetch } = useQuery({
+    queryKey: ['posts', communityId],
+    queryFn: () => api.get(`/post/community/${communityId}`)
+  });
+  return { data: (data?.data?.posts || []) as Post[], isLoading, error, refetch };
+};
+
 const CommunityPage = () => {
   const { id } = useParams();
   const { user } = useAuthStore();
   const queryClient = useQueryClient();
   const { data: community, isLoading, error, refetch } = useCommunityQuery(id!);
+  const { data: posts, isLoading: postsLoading, error: postsError, refetch: postsRefetch } = usePostsQuery(id!);
   const [color1, color2] = getCommunityColor(id!);
   const [showLeaveDialog, setShowLeaveDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -157,7 +167,7 @@ const CommunityPage = () => {
         <div className="flex flex-col lg:flex-row gap-4 sm:gap-6">
           {/* Left Content (Community Info & Posts) */}
           <div className="flex-1 -mt-8 sm:-mt-16 relative z-10">
-            <Card className="shadow-lg p-4 sm:p-6 mb-4 sm:mb-6">
+            <Card className="shadow-lg p-4 sm:p-6 mb-4 sm:mb-6 dark:bg-gray-950">
               <CardContent className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-0">
                 <div>
                   <div className="flex items-center justify-between md:hidden mb-4">
@@ -271,21 +281,71 @@ const CommunityPage = () => {
               </CardFooter>
             </Card>
 
-            {/* Posts Section - Placeholder */}
-            <div className="space-y-4">
+            {/* Posts Section */}
+            <div className="space-y-4 mb-10">
               <div className="flex items-center justify-between">
                 <h2 className="text-lg sm:text-xl font-semibold">Posts</h2>
-                {/* Add post creation button here later */}
+                {community.isMember && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => navigate(`/community/${id}/create-post`)}
+                  >
+                    Create Post
+                  </Button>
+                )}
               </div>
-              <div className="bg-card rounded-lg shadow p-4 sm:p-6 text-center text-muted-foreground">
-                Posts feature coming soon...
-              </div>
+              
+              {postsLoading ? (
+                <div className="space-y-4">
+                  {Array(3).fill(0).map((_, i) => (
+                    <div key={i} className="rounded-lg border bg-card p-4 space-y-4">
+                      <div className="flex items-center gap-2">
+                        <Skeleton className="h-6 w-6 rounded-full" />
+                        <Skeleton className="h-4 w-24" />
+                      </div>
+                      <Skeleton className="h-4 w-3/4" />
+                      <Skeleton className="h-4 w-full" />
+                      <div className="flex items-center gap-4">
+                        <Skeleton className="h-8 w-16" />
+                        <Skeleton className="h-8 w-16" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : postsError ? (
+                <div className="flex flex-col items-center justify-center p-8 gap-4">
+                  <div className="text-center text-red-500">Error loading posts</div>
+                  <Button variant="outline" onClick={() => postsRefetch()}>Retry</Button>
+                </div>
+              ) : posts.length === 0 ? (
+                <div className="flex flex-col items-center justify-center p-8 gap-4">
+                  <p className="text-muted-foreground text-center">No posts yet</p>
+                  {community.isMember && (
+                    <Button
+                      variant="outline"
+                      onClick={() => navigate(`/community/${id}/create-post`)}
+                    >
+                      Create First Post
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {posts.map((post) => (
+                    <PostOverview
+                      key={post.id}
+                      post={{ ...post, community }}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
           {/* Desktop Right Sidebar - Members List */}
           <div className="hidden lg:block lg:w-80 lg:-mt-16 relative z-10">
-            <Card className="shadow-lg sticky top-4">
+            <Card className="shadow-lg sticky top-4 dark:bg-gray-950">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="font-semibold">Members</h3>

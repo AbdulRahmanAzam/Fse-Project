@@ -7,6 +7,8 @@ import PublicRoute from './components/routes/public-route'
 import CommunitiesPage from './pages/all-communities-page'
 import CommunityPage from './pages/community-page'
 import CreateCommunityPage from './pages/create-community-page'
+import CreatePostPage from './pages/create-post-page'
+import EditPostPage from './pages/edit-post-page'
 
 function AppRoutes() {
   return (
@@ -17,6 +19,8 @@ function AppRoutes() {
         <Route path="/communities" element={<CommunitiesPage />} />
         <Route path="/community/:id" element={<CommunityPage />} />
         <Route path="/community/create" element={<ProtectedRoute permission="admin"><CreateCommunityPage /></ProtectedRoute>} />
+        <Route path="/community/:id/create-post" element={<CreatePostPage />} />
+        <Route path="/community/:id/edit-post/:postId" element={<EditPostPage />} />
       </Route>
     </Routes>
   )

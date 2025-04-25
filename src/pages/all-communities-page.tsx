@@ -87,9 +87,9 @@ const CommunitiesPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="bg-white dark:bg-gray-950 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-10">
+      <div className="bg-background border-b border-gray-200 dark:border-gray-800 sticky top-0 z-10 dark:bg-gray-950">
         <div className="container max-w-6xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <h1 className="text-xl md:text-2xl mr-4 md:mr-0 font-bold">Communities</h1>
