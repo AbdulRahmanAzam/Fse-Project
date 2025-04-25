@@ -25,6 +25,7 @@ api.interceptors.response.use(
     
     if (response && response.status === 401 && window.location.pathname !== '/auth') {
       localStorage.removeItem('auth_token');
+      localStorage.removeItem('auth-storage');
       window.location.href = '/auth';
     }
     

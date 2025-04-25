@@ -1,16 +1,14 @@
-import { useState } from 'react'
-
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 
 import { 
-  Bell, 
-  Search, 
+  Bell,
   Sun, 
   Moon, 
   User, 
   Handshake, 
   Menu,
-  ChevronDown
+  ChevronDown,
+  Users
 } from 'lucide-react'
 import { useTheme } from '../theme/theme-provider'
 
@@ -23,13 +21,12 @@ import {
   DropdownMenuTrigger 
 } from '../ui/dropdown-menu'
 
-import { Input } from '../ui/input'
-
 import { 
   Sheet, 
   SheetContent, 
   SheetTrigger,
-  SheetTitle
+  SheetTitle,
+  SheetHeader
 } from '../ui/sheet'
 
 import { 
@@ -40,7 +37,7 @@ import {
   DialogTrigger 
 } from '../ui/dialog'
 
-import { useAuthStore } from '@/lib/store'
+import { useAuthStore } from '@/lib/stores/use-auth-store'
 import { ModeToggle } from '../theme/mode-toggle'
 
 // Developer information
@@ -74,16 +71,11 @@ const developers = [
 const Header = () => {
   const { theme, setTheme } = useTheme();
   const { user, logout } = useAuthStore();
-  const [searchQuery, setSearchQuery] = useState('');
+  const navigate = useNavigate();
+  // const [searchQuery, setSearchQuery] = useState('');
   
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark')
-  }
-
-  const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    // Implement search functionality here
-    console.log('Searching for:', searchQuery)
   }
 
   return (
@@ -95,20 +87,6 @@ const Header = () => {
             <img src="/src/assets/genz-logo2.png" alt="Logo" className="h-8 w-8" />
             <span className="text-xl font-bold">GenZ Scholars</span>
           </Link>
-        </div>
-
-        {/* Desktop Search Bar */}
-        <div className="hidden md:flex md:flex-1 md:justify-center px-6">
-          <form onSubmit={handleSearch} className="relative w-full max-w-sm">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Search communities or users..."
-              className="w-full rounded-full bg-muted pl-8 pr-4"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </form>
         </div>
 
         {/* Desktop Navigation */}
@@ -158,7 +136,7 @@ const Header = () => {
           </Dialog>
 
           {/* Notifications */}
-          {user?.role === 'admin' && <DropdownMenu>
+          {user?.isAdmin && <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="relative">
                 <Bell className="h-5 w-5" />
@@ -248,9 +226,6 @@ const Header = () => {
                       <User className="h-4 w-4 mx-auto my-2" />
                     )}
                   </div>
-                  <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-white">
-                    3
-                  </span>
                 </Button>
               ) : (
                 <Button variant="ghost" size="icon">
@@ -261,7 +236,7 @@ const Header = () => {
             <SheetTitle className="sr-only">GenZ Scholars</SheetTitle>
             <SheetContent side="right">
               <div className="flex flex-col h-full">
-                <div className="flex justify-between items-center py-4">
+                <div onClick={() => navigate('/')} className="flex justify-between items-center py-4">
                   <div className="flex items-center gap-2">
                     <img src="/src/assets/genz-logo2.png" alt="Logo" className="h-8 w-8" />
                     <span className="text-xl font-bold">GenZ Scholars</span>
@@ -270,7 +245,7 @@ const Header = () => {
                 
                 {!!user && (
                   <div className="flex items-center gap-3 mb-4 p-3 bg-muted/30 rounded-lg">
-                    <div className="h-10 w-10 rounded-full bg-muted overflow-hidden">
+                    <div onClick={() => navigate('/profile')} className="h-10 w-10 rounded-full bg-muted overflow-hidden">
                       {user.avatar ? (
                         <img src={user.avatar} alt={user.username} className="h-full w-full object-cover" />
                       ) : (
@@ -279,23 +254,10 @@ const Header = () => {
                     </div>
                     <div>
                       <p className="font-medium">{user.displayName || user.username}</p>
-                      <p className="text-xs text-muted-foreground">{user.email}</p>
+                      <p className="font-light text-xs">{user.email}</p>
                     </div>
                   </div>
                 )}
-                
-                <div className="py-4">
-                  <form onSubmit={handleSearch} className="relative w-full">
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      type="search"
-                      placeholder="Search communities or users..."
-                      className="w-full rounded-full bg-muted pl-8 pr-4"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                  </form>
-                </div>
                 
                 <div className="flex flex-col gap-2 mt-4">
                   <Button variant="ghost" className="justify-start" onClick={toggleTheme}>
@@ -306,17 +268,17 @@ const Header = () => {
                     )}
                   </Button>
                   
-                  <Dialog>
-                    <DialogTrigger asChild>
+                  <Sheet>
+                    <SheetTrigger asChild>
                       <Button variant="ghost" className="justify-start">
                         <Handshake className="mr-2 h-4 w-4" />
                         <span>Team</span>
                       </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-md">
-                      <DialogHeader>
-                        <DialogTitle>Meet Our Development Team</DialogTitle>
-                      </DialogHeader>
+                    </SheetTrigger>
+                    <SheetContent className="max-w-md" side="bottom">
+                      <SheetHeader>
+                        <SheetTitle>Meet Our Development Team</SheetTitle>
+                      </SheetHeader>
                       <div className="py-4 space-y-6">
                         {developers.map((dev, index) => (
                           <div key={index} className="flex items-start space-x-4">
@@ -343,42 +305,36 @@ const Header = () => {
                           </div>
                         ))}
                       </div>
-                    </DialogContent>
-                  </Dialog>
+                    </SheetContent>
+                  </Sheet>
                   
-                  <Button variant="ghost" className="justify-start relative">
+                  {user?.isAdmin && <Button variant="ghost" className="justify-start relative">
                     <Bell className="mr-2 h-4 w-4" />
                     <span>Notifications</span>
                     <span className="absolute top-1/2 right-4 -translate-y-1/2 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-white">
                       3
                     </span>
+                  </Button>}
+
+                  <Button variant="ghost" className="justify-start" asChild>
+                    <Link to="/communities">
+                      <Users className="mr-2 h-4 w-4" />
+                      <span>Explore</span>
+                    </Link>
                   </Button>
                   
-                  {!!user ? (
-                    <>
-                      <Button variant="ghost" className="justify-start" asChild>
-                        <Link to="/profile">
-                          <User className="mr-2 h-4 w-4" />
-                          <span>Profile</span>
-                        </Link>
-                      </Button>
-                      <Button variant="ghost" className="justify-start" asChild>
-                        <Link to="/settings">Settings</Link>
-                      </Button>
-                      <Button variant="ghost" className="justify-start" onClick={logout}>
-                        Sign Out
-                      </Button>
-                    </>
-                  ) : (
-                    <>
-                      <Button variant="ghost" className="justify-start" asChild>
-                        <Link to="/login">Sign In</Link>
-                      </Button>
-                      <Button variant="ghost" className="justify-start" asChild>
-                        <Link to="/register">Sign Up</Link>
-                      </Button>
-                    </>
-                  )}
+                  <Button variant="ghost" className="justify-start" asChild>
+                    <Link to="/profile">
+                      <User className="mr-2 h-4 w-4" />
+                      <span>Profile</span>
+                    </Link>
+                  </Button>
+                  <Button variant="ghost" className="justify-start" asChild>
+                    <Link to="/settings">Settings</Link>
+                  </Button>
+                  <Button variant="ghost" className="justify-start" onClick={logout}>
+                    Sign Out
+                  </Button>
                 </div>
               </div>
             </SheetContent>

@@ -5,13 +5,13 @@ import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ModeToggle } from '@/components/theme/mode-toggle'
 import { Eye, EyeOff, Mail, Lock, Loader2 } from 'lucide-react'
-import { useNavigate, Link } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import api from '@/lib/api'
 import type { ApiResponse, ApiResponseError } from '@/lib/api.d'
 import { useMutation } from '@tanstack/react-query'
 import { useToast } from '@/components/ui/use-toast'
-import { useAuthStore } from '@/lib/store'
+import { useAuthStore } from '@/lib/stores/use-auth-store'
 import { AxiosResponse } from 'axios'
 
 const websiteRules = [
@@ -58,7 +58,6 @@ const usernameRegex = /^[a-zA-Z0-9_]+$/
 
 const AuthPage = () => {
   const { toast } = useToast();
-  const navigate = useNavigate();
   const { login, setError } = useAuthStore();
   const [showPassword, setShowPassword] = useState(false);
   const { register: loginRegister, handleSubmit: handleLoginSubmit, formState: { errors: loginErrors } } = useForm<LoginFormData>();
@@ -99,17 +98,17 @@ const AuthPage = () => {
   });
   
   return (
-    <div className="fixed inset-0 flex items-center justify-center p-4 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm z-50">
-      <div className="w-full max-w-4xl h-auto max-h-[90vh] bg-background/95 dark:bg-background/95 rounded-xl shadow-2xl flex flex-col md:flex-row overflow-hidden">
+    <div className="fixed inset-0 flex items-center justify-center p-2 sm:p-4 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm z-50">
+      <div className="w-full max-w-4xl h-[95vh] sm:h-auto max-h-[95vh] bg-background/95 dark:bg-background/95 rounded-xl shadow-2xl flex flex-col md:flex-row overflow-hidden">
         {/* Left panel - Form */}
-        <div className="md:w-1/2 p-4 md:p-6 flex items-center justify-center overflow-auto">
+        <div className="w-full md:w-1/2 p-3 sm:p-4 md:p-6 flex items-center justify-center overflow-auto">
           <div className="w-full max-w-md py-2">
             <div className="text-center mb-4 relative">
               <div className="absolute right-0 top-0">
                 <ModeToggle />
               </div>
-              <h1 className="text-2xl font-bold text-foreground">GenZ Scholars</h1>
-              <p className="text-muted-foreground text-sm mt-1">Connect with your university community</p>
+              <h1 className="text-xl sm:text-2xl font-bold text-foreground">GenZ Scholars</h1>
+              <p className="text-muted-foreground text-xs sm:text-sm mt-1">Connect with your university community</p>
             </div>
             
             <Tabs defaultValue="signin" className="w-full">
@@ -195,26 +194,6 @@ const AuthPage = () => {
                       "Sign In"
                     )}
                   </Button>
-                  
-                  {/* Not using github auth for now */}
-                  {/* <div className="relative my-3">
-                    <div className="absolute inset-0 flex items-center">
-                      <div className="w-full border-t border-border"></div>
-                    </div>
-                    <div className="relative flex justify-center text-xs">
-                      <span className="bg-background dark:bg-background px-2 text-muted-foreground text-xs">Or continue with</span>
-                    </div>
-                  </div>
-                  
-                  <Button
-                    variant="outline"
-                    className="w-full h-9 text-sm"
-                    type="button"
-                    disabled={isLoginLoading}
-                  >
-                    <Github className="mr-2 h-3 w-3" />
-                    Github
-                  </Button> */}
                 </form>
               </TabsContent>
               
@@ -337,29 +316,29 @@ const AuthPage = () => {
         </div>
         
         {/* Right panel - Information */}
-        <div className="md:w-1/2 bg-primary/90 dark:bg-primary/80 text-primary-foreground overflow-auto">
-          <div className="h-full p-4 md:p-6 flex flex-col">
+        <div className="w-full md:w-1/2 bg-primary/90 dark:bg-primary/80 text-primary-foreground overflow-auto">
+          <div className="h-full p-3 sm:p-4 md:p-6 flex flex-col">
             <div className="flex-1 flex flex-col justify-center items-center text-center">
-              <h2 className="text-xl font-bold mb-3">Welcome to GenZ Scholars</h2>
-              <p className="mb-4 max-w-md text-sm text-primary-foreground/90">
+              <h2 className="text-lg sm:text-xl font-bold mb-2 sm:mb-3">Welcome to GenZ Scholars</h2>
+              <p className="mb-3 sm:mb-4 max-w-md text-xs sm:text-sm text-primary-foreground/90">
                 Your university's digital hub for connecting students, sharing knowledge, and building a thriving academic community.
               </p>
               
               {/* Team members */}
-              <div className="mb-4">
-                <h3 className="text-lg font-semibold mb-2">Meet Our Development Team</h3>
-                <div className="flex flex-wrap justify-center gap-3">
+              <div className="mb-3 sm:mb-4">
+                <h3 className="text-base sm:text-lg font-semibold mb-2">Meet Our Development Team</h3>
+                <div className="flex flex-wrap justify-center gap-2 sm:gap-3">
                   {teamMembers.map((member, index) => (
                     <div key={index} className="text-center">
-                      <div className="w-12 h-12 md:w-16 md:h-16 rounded-full overflow-hidden border-2 border-primary-foreground/30 bg-primary-foreground/10 mx-auto">
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 rounded-full overflow-hidden border-2 border-primary-foreground/30 bg-primary-foreground/10 mx-auto">
                         <img 
                           src={member.avatar} 
                           alt={member.username} 
                           className="w-full h-full object-cover"
                         />
                       </div>
-                      <p className="font-medium mt-1 text-sm">{member.username}</p>
-                      <p className="text-xs opacity-90">{member.role}</p>
+                      <p className="font-medium mt-1 text-xs sm:text-sm">{member.username}</p>
+                      <p className="text-[10px] sm:text-xs opacity-90">{member.role}</p>
                     </div>
                   ))}
                 </div>
@@ -367,8 +346,8 @@ const AuthPage = () => {
               
               {/* Website rules */}
               <div className="w-full max-w-md">
-                <h3 className="text-lg font-semibold mb-2">Community Guidelines</h3>
-                <ul className="space-y-1 text-left text-sm text-primary-foreground/90">
+                <h3 className="text-base sm:text-lg font-semibold mb-2">Community Guidelines</h3>
+                <ul className="space-y-1 text-left text-xs sm:text-sm text-primary-foreground/90">
                   {websiteRules.map((rule, index) => (
                     <li key={index} className="flex items-start">
                       <span className="font-bold mr-1">•</span>
@@ -378,11 +357,6 @@ const AuthPage = () => {
                 </ul>
               </div>
             </div>
-            
-            {/* CSS looks off for it so I commented it out for now */}
-            {/* <div className="mt-auto text-center opacity-75 text-xs">
-              <p>© {new Date().getFullYear()} GenZ Scholars. All rights reserved.</p>
-            </div> */}
           </div>
         </div>
       </div>
