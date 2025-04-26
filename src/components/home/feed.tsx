@@ -33,7 +33,13 @@ const FeedComponent = () => {
           ))}
         </div>
       ) : posts.length > 0 ? (
-        posts.map((post, index) => <PostOverview key={index} post={post} />)
+        posts.map((post, index) =>
+          <PostOverview
+            key={index}
+            post={post}
+            queryKey={['posts']}
+          />
+        )
       ) : (
         <div className='flex flex-col gap-4 items-center justify-center'>
           <p className='text-gray-500'>Nothing here yet...</p>

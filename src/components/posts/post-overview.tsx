@@ -15,11 +15,14 @@ import { useToast } from "../ui/use-toast";
 import api from "@/lib/api";
 import { useAuthStore } from "@/lib/stores/use-auth-store";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../ui/dialog";
+import { useVotePost } from "@/lib/hooks/use-vote-post";
 
 const PostOverview = ({
-  post
+  post,
+  queryKey
 }: {
-  post: Post
+  post: Post,
+  queryKey: any[]
 }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -27,6 +30,7 @@ const PostOverview = ({
   const voteDifference = post.upvotes - post.downvotes;
   const [isOpen, setIsOpen] = useState(voteDifference >= 0);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const { votePost } = useVotePost(queryKey);
   const queryClient = useQueryClient();
 
   const isOwner = user?.id === post.user.id;
@@ -47,53 +51,6 @@ const PostOverview = ({
         description: error.info || 'Failed to delete post',
         variant: 'destructive'
       });
-    }
-  });
-
-  const { mutate: votePost } = useMutation({
-    mutationFn: ({ postId, voteType }: { postId: number, voteType: 'up' | 'down' }) => {
-      return api.post(`/post/${voteType === 'up' ? 'upvote' : 'downvote'}/${postId}`);
-    },
-    onMutate: async ({ postId, voteType }) => {
-      await queryClient.cancelQueries({ queryKey: ['posts'] });
-
-      const previousPosts = queryClient.getQueryData(['posts']);
-
-      queryClient.setQueryData(['posts'], (old: any) => {
-        const updatedPosts = old?.data?.posts?.map((post: Post) => {
-          if (post.id === postId) {
-            const isSameVote = post.userVote === voteType;
-            const isSwitchingVote = post.userVote && post.userVote !== voteType;
-
-            return {
-              ...post,
-              upvotes: post.upvotes +
-                (voteType === 'up' ? (isSameVote ? -1 : (isSwitchingVote ? 1 : 1)) : (isSwitchingVote ? -1 : 0)),
-              downvotes: post.downvotes +
-                (voteType === 'down' ? (isSameVote ? -1 : (isSwitchingVote ? 1 : 1)) : (isSwitchingVote ? -1 : 0)),
-              userVote: isSameVote ? undefined : voteType,
-            };
-          }
-          return post;
-        }) || [];
-
-        return { data: { posts: updatedPosts } };
-      });
-
-      return { previousPosts };
-    },
-    onError: (error, _variables, context) => {
-      if (context?.previousPosts)
-        queryClient.setQueryData(['posts'], context.previousPosts);
-
-      error.stack && console.log(error.stack);
-      toast({
-        title: 'Error',
-        description: error.message
-      });
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['posts'] });
     }
   });
 
@@ -123,7 +80,7 @@ const PostOverview = ({
                 "group relative overflow-hidden"
               )}
             >
-              <div className="px-4 py-3 space-y-3">
+              <div className="px-4 py-3 space-y-3 dark:bg-gray-950">
                 {/* Header */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">

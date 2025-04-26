@@ -186,7 +186,7 @@ const CommunityPage = () => {
                         </SheetHeader>
                         <ScrollArea className="h-[calc(100vh-4rem)]">
                           <div className="px-4 py-2 space-y-4">
-                            {community.members?.map((member, index) => (
+                            {community.members?.sort((a, b) => (a.role === 'admin' ? -1 : 1) - (b.role === 'admin' ? -1 : 1)).map((member, index) => (
                               <div key={index} className="flex items-center gap-3">
                                 <Avatar className="h-10 w-10">
                                   <AvatarImage src={member.avatar} alt={member.username} />
@@ -228,7 +228,7 @@ const CommunityPage = () => {
                             <Pencil className="mr-2 h-4 w-4" />
                             Edit Community
                           </DropdownMenuItem>
-                          <DropdownMenuItem 
+                          <DropdownMenuItem
                             className="text-destructive focus:text-destructive"
                             onClick={() => setShowDeleteDialog(true)}
                           >
@@ -285,7 +285,7 @@ const CommunityPage = () => {
             <div className="space-y-4 mb-10">
               <div className="flex items-center justify-between">
                 <h2 className="text-lg sm:text-xl font-semibold">Posts</h2>
-                {community.isMember && (
+                {(community.isMember || user?.isAdmin) && (
                   <Button
                     variant="outline"
                     size="sm"
@@ -336,6 +336,7 @@ const CommunityPage = () => {
                     <PostOverview
                       key={post.id}
                       post={{ ...post, community }}
+                      queryKey={['posts', id!]}
                     />
                   ))}
                 </div>
@@ -356,7 +357,9 @@ const CommunityPage = () => {
 
                 <ScrollArea className="h-[400px] pr-4">
                   <div className="space-y-4">
-                    {community.members?.map((member, index) => (
+                    {community.members
+                      ?.sort((a, b) => (a.role === 'admin' ? -1 : 1) - (b.role === 'admin' ? -1 : 1))
+                      .map((member, index) => (
                       <div key={index} className="flex items-center gap-3">
                         <Avatar className="h-8 w-8">
                           <AvatarImage src={member.avatar} alt={member.username} />

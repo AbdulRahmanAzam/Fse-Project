@@ -1,10 +1,10 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ModeToggle } from '@/components/theme/mode-toggle'
-import { Eye, EyeOff, Mail, Lock, Loader2 } from 'lucide-react'
+import { Eye, EyeOff, Mail, Lock, Loader2, Info } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import api from '@/lib/api'
@@ -13,6 +13,7 @@ import { useMutation } from '@tanstack/react-query'
 import { useToast } from '@/components/ui/use-toast'
 import { useAuthStore } from '@/lib/stores/use-auth-store'
 import { AxiosResponse } from 'axios'
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 
 const websiteRules = [
   "Be respectful and considerate towards all community members",
@@ -60,10 +61,10 @@ const AuthPage = () => {
   const { toast } = useToast();
   const { login, setError } = useAuthStore();
   const [showPassword, setShowPassword] = useState(false);
-  const { register: loginRegister, handleSubmit: handleLoginSubmit, formState: { errors: loginErrors } } = useForm<LoginFormData>();
-  const { register: registerRegister, handleSubmit: handleRegisterSubmit, formState: { errors: registerErrors } } = useForm<RegisterFormData>();
+  const { register: loginRegister, handleSubmit: handleLoginSubmit, formState: { errors: loginErrors }, reset: resetLogin } = useForm<LoginFormData>();
+  const { register: registerRegister, handleSubmit: handleRegisterSubmit, formState: { errors: registerErrors }, reset: resetRegister } = useForm<RegisterFormData>();
 
-  const { mutate: loginFn, isPending: isLoginLoading } = useMutation({
+  const { mutate: loginFn, isPending: isLoginLoading, isSuccess: isLoginSuccess } = useMutation({
     mutationFn: (data: LoginFormData) => {
       return api.post('/user/login', data);
     },
@@ -80,9 +81,9 @@ const AuthPage = () => {
     }
   });
 
-  const { mutate: registerFn, isPending: isRegisterLoading } = useMutation({
+  const { mutate: registerFn, isPending: isRegisterLoading, isSuccess: isRegisterSuccess } = useMutation({
     mutationFn: (data: RegisterFormData) => {
-      return api.post('/user/register', data);
+      return api.post('/user/register', { ...data, role: 'member' });
     },
     onSuccess: (data: ApiResponse) => {
       login(data.user, data.token);
@@ -96,6 +97,16 @@ const AuthPage = () => {
       });
     }
   });
+
+  useEffect(() => {
+    if (isLoginSuccess)
+      resetLogin();
+  }, [isLoginSuccess]);
+
+  useEffect(() => {
+    if (isRegisterSuccess)
+      resetRegister();
+  }, [isRegisterSuccess]);
   
   return (
     <div className="fixed inset-0 flex items-center justify-center p-2 sm:p-4 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm z-50">
@@ -312,33 +323,82 @@ const AuthPage = () => {
                 </form>
               </TabsContent>
             </Tabs>
+
+            {/* Mobile Info Button */}
+            <div className="md:hidden mt-4">
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button variant="outline" className="w-full gap-2">
+                    <Info className="h-4 w-4" />
+                    About GenZ Scholars
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="bottom" className="h-[80vh]">
+                  <SheetHeader>
+                    <SheetTitle>About GenZ Scholars</SheetTitle>
+                  </SheetHeader>
+                  <div className="mt-4 space-y-6">
+                    <div>
+                      <h3 className="text-lg font-semibold mb-2">Meet Our Development Team</h3>
+                      <div className="flex flex-wrap justify-center gap-3">
+                        {teamMembers.map((member, index) => (
+                          <div key={index} className="text-center">
+                            <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-primary/30 bg-primary/10 mx-auto">
+                              <img 
+                                src={member.avatar} 
+                                alt={member.username} 
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                            <p className="font-medium mt-1">{member.username}</p>
+                            <p className="text-sm opacity-90">{member.role}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <h3 className="text-lg font-semibold mb-2">Community Guidelines</h3>
+                      <ul className="space-y-2 text-sm">
+                        {websiteRules.map((rule, index) => (
+                          <li key={index} className="flex items-start">
+                            <span className="font-bold mr-1">•</span>
+                            <span>{rule}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </SheetContent>
+              </Sheet>
+            </div>
           </div>
         </div>
         
-        {/* Right panel - Information */}
-        <div className="w-full md:w-1/2 bg-primary/90 dark:bg-primary/80 text-primary-foreground overflow-auto">
-          <div className="h-full p-3 sm:p-4 md:p-6 flex flex-col">
+        {/* Desktop Right panel - Information */}
+        <div className="hidden md:block w-1/2 bg-primary/90 dark:bg-primary/80 text-primary-foreground overflow-auto">
+          <div className="h-full p-6 flex flex-col">
             <div className="flex-1 flex flex-col justify-center items-center text-center">
-              <h2 className="text-lg sm:text-xl font-bold mb-2 sm:mb-3">Welcome to GenZ Scholars</h2>
-              <p className="mb-3 sm:mb-4 max-w-md text-xs sm:text-sm text-primary-foreground/90">
+              <h2 className="text-xl font-bold mb-3">Welcome to GenZ Scholars</h2>
+              <p className="mb-4 max-w-md text-sm text-primary-foreground/90">
                 Your university's digital hub for connecting students, sharing knowledge, and building a thriving academic community.
               </p>
               
               {/* Team members */}
-              <div className="mb-3 sm:mb-4">
-                <h3 className="text-base sm:text-lg font-semibold mb-2">Meet Our Development Team</h3>
-                <div className="flex flex-wrap justify-center gap-2 sm:gap-3">
+              <div className="mb-4">
+                <h3 className="text-lg font-semibold mb-2">Meet Our Development Team</h3>
+                <div className="flex flex-wrap justify-center gap-3">
                   {teamMembers.map((member, index) => (
                     <div key={index} className="text-center">
-                      <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 rounded-full overflow-hidden border-2 border-primary-foreground/30 bg-primary-foreground/10 mx-auto">
+                      <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-primary-foreground/30 bg-primary-foreground/10 mx-auto">
                         <img 
                           src={member.avatar} 
                           alt={member.username} 
                           className="w-full h-full object-cover"
                         />
                       </div>
-                      <p className="font-medium mt-1 text-xs sm:text-sm">{member.username}</p>
-                      <p className="text-[10px] sm:text-xs opacity-90">{member.role}</p>
+                      <p className="font-medium mt-1">{member.username}</p>
+                      <p className="text-sm opacity-90">{member.role}</p>
                     </div>
                   ))}
                 </div>
@@ -346,8 +406,8 @@ const AuthPage = () => {
               
               {/* Website rules */}
               <div className="w-full max-w-md">
-                <h3 className="text-base sm:text-lg font-semibold mb-2">Community Guidelines</h3>
-                <ul className="space-y-1 text-left text-xs sm:text-sm text-primary-foreground/90">
+                <h3 className="text-lg font-semibold mb-2">Community Guidelines</h3>
+                <ul className="space-y-2 text-sm text-primary-foreground/90">
                   {websiteRules.map((rule, index) => (
                     <li key={index} className="flex items-start">
                       <span className="font-bold mr-1">•</span>
