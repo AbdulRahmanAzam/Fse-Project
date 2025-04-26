@@ -14,8 +14,14 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "../ui/use-toast";
 import api from "@/lib/api";
 import { useAuthStore } from "@/lib/stores/use-auth-store";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../ui/dialog";
 import { useVotePost } from "@/lib/hooks/use-vote-post";
+import PostDeleteWarning from "./post-delete-warning";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "../ui/tooltip";
 
 const PostOverview = ({
   post,
@@ -61,7 +67,10 @@ const PostOverview = ({
   return (
     <div className="flex items-start gap-2">
       {!isOpen && (
-        <div className='flex items-center gap-2 p-2 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-pointer' onClick={() => setIsOpen(true)}>
+        <div
+          className='flex items-center gap-2 p-2 rounded-lg bg-muted/50 hover:bg-muted transition-colors'
+          onClick={() => setIsOpen(true)}
+        >
           <EyeOff className="h-4 w-4 text-muted-foreground" />
           <p className='text-sm text-muted-foreground'>Post hidden</p>
         </div>
@@ -106,7 +115,30 @@ const PostOverview = ({
                       <span className="text-xs text-muted-foreground">
                         by {post.user.displayName || post.user.username}
                       </span>
-                      <Label className="text-xs text-muted-foreground">{formatTime(new Date(post.createdAt))}</Label>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className="flex items-center gap-1">
+                              <Label className="text-xs text-muted-foreground">
+                                {formatTime(new Date(post.createdAt))}
+                              </Label>
+                              {Math.abs(new Date(post.updatedAt).getTime() - new Date(post.createdAt).getTime()) > 5000 && (
+                                <span className="text-xs text-muted-foreground">(edited)</span>
+                              )}
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="text-sm">
+                              Date created: {new Date(post.createdAt).toLocaleString()}
+                              {Math.abs(new Date(post.updatedAt).getTime() - new Date(post.createdAt).getTime()) > 5000 && (
+                                <span className="block text-xs text-muted-foreground">
+                                  Last edited: {new Date(post.updatedAt).toLocaleString()}
+                                </span>
+                              )}
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     </div>
                   </div>
 
@@ -146,9 +178,9 @@ const PostOverview = ({
                 </div>
 
                 {/* Content */}
-                <div className="space-y-3">
-                  <h1 className="text-lg font-semibold leading-tight">{post.title}</h1>
-                  <p className="text-sm text-muted-foreground line-clamp-3">{post.content}</p>
+                <div className="ml-2 space-y-3">
+                  <h1 className="text-lg font-semibold leading-tight line-clamp-2">{post.title}</h1>
+                  <p className="text-sm text-muted-foreground line-clamp-5">{post.content}</p>
                 </div>
 
                 {/* Image */}
@@ -169,7 +201,7 @@ const PostOverview = ({
                     variant="ghost"
                     size="sm"
                     className="text-muted-foreground hover:text-foreground"
-                    onClick={() => {}}
+                    onClick={() => navigate(`/community/${post.community.id}/post/${post.id}`)}
                   >
                     <MessageCircle className="mr-2 h-4 w-4" />
                     Comments
@@ -181,27 +213,11 @@ const PostOverview = ({
         </Collapsible>
       </div>
 
-      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete Post</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete this post? This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
-              Cancel
-            </Button>
-            <Button variant="destructive" onClick={() => {
-              deletePost();
-              setShowDeleteDialog(false);
-            }}>
-              Delete
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <PostDeleteWarning
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        onDelete={() => deletePost()}
+      />
     </div>
   )
 }

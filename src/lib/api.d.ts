@@ -58,3 +58,17 @@ export interface Community {
   updatedAt: string;
   image?: string;
 }
+
+export interface Comment {
+  id: number;
+  content: string;
+  user: User;
+  children: Comment[];
+  postId: number;
+  parentId: number | null;
+  createdAt: string;
+  updatedAt: string;
+  upvotes: number;
+  downvotes: number;
+  userVote?: 'up' | 'down';
+}

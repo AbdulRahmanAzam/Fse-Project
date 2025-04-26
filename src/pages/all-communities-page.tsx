@@ -44,11 +44,11 @@ const CommunitiesPage = () => {
   const { mutate: joinLeaveCommunity } = useMutation({
     mutationFn: ({ communityId, join }: { communityId: number, join: boolean }) => api.post(`/community/${join ? 'join' : 'leave'}/${communityId}`),
     onMutate: async ({ communityId, join }) => {
-      await queryClient.cancelQueries({ queryKey: ['communities'] });
+      await queryClient.cancelQueries({ queryKey: ['communities', searchParams.get('q') || ''] });
 
-      const previousCommunities = queryClient.getQueryData(['communities']);
+      const previousCommunities = queryClient.getQueryData(['communities', searchParams.get('q') || '']);
 
-      queryClient.setQueryData(['communities'], (old: any) => {
+      queryClient.setQueryData(['communities', searchParams.get('q') || ''], (old: any) => {
         const updatedCommunities = old?.data?.communities?.map((community: Community) =>
           community.id === communityId ? {
             ...community,
@@ -69,7 +69,7 @@ const CommunitiesPage = () => {
     },
     onError: (error: any, _variables, context) => {
       if (context?.previousCommunities)
-        queryClient.setQueryData(['communities'], context.previousCommunities);
+        queryClient.setQueryData(['communities', searchParams.get('q') || ''], context.previousCommunities);
 
       toast({
         title: error.message || 'Error',
@@ -78,7 +78,7 @@ const CommunitiesPage = () => {
       });
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['communities'] });
+      queryClient.invalidateQueries({ queryKey: ['communities', searchParams.get('q') || ''] });
     }
   });
 
@@ -124,7 +124,7 @@ const CommunitiesPage = () => {
             </div>
           ) : isLoading ? (
             Array(9).fill(0).map((_, i) => (
-              <div key={i} className="bg-white dark:bg-gray-950 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-800">
+              <div key={i} className="rounded-lg overflow-hidden border">
                 <Skeleton className="w-full h-32" />
                 <div className="p-4">
                   <Skeleton className="h-6 w-3/4 mb-2" />

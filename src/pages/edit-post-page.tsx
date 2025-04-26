@@ -109,14 +109,14 @@ const EditPostPage = () => {
         <div className="mb-4">
           <Button
             variant="ghost"
-            onClick={() => navigate(`/community/${id}`)}
+            onClick={() => navigate(-1)}
             className="gap-2"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to {post?.community.name}
+            Back
           </Button>
         </div>
-        <Card>
+        <Card className='dark:bg-gray-950'>
           <CardHeader>
             <CardTitle>Edit Post</CardTitle>
             <CardDescription>

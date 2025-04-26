@@ -15,34 +15,59 @@ export const useVotePost = (queryKey: any[]) => {
     onMutate: async ({ postId, voteType }) => {
       await queryClient.cancelQueries({ queryKey });
 
-      const previousPosts = queryClient.getQueryData(queryKey);
+      const previousData = queryClient.getQueryData(queryKey);
 
       queryClient.setQueryData(queryKey, (old: any) => {
-        const updatedPosts = old?.data?.posts?.map((post: Post) => {
+        // Handle single post update
+        if (old?.data?.post) {
+          const post = old.data.post;
           if (post.id === postId) {
             const isSameVote = post.userVote === voteType;
             const isSwitchingVote = post.userVote && post.userVote !== voteType;
 
             return {
-              ...post,
-              upvotes: post.upvotes +
-                (voteType === 'up' ? (isSameVote ? -1 : (isSwitchingVote ? 1 : 1)) : (isSwitchingVote ? -1 : 0)),
-              downvotes: post.downvotes +
-                (voteType === 'down' ? (isSameVote ? -1 : (isSwitchingVote ? 1 : 1)) : (isSwitchingVote ? -1 : 0)),
-              userVote: isSameVote ? undefined : voteType,
+              data: {
+                post: {
+                  ...post,
+                  upvotes: post.upvotes +
+                    (voteType === 'up' ? (isSameVote ? -1 : (isSwitchingVote ? 1 : 1)) : (isSwitchingVote ? -1 : 0)),
+                  downvotes: post.downvotes +
+                    (voteType === 'down' ? (isSameVote ? -1 : (isSwitchingVote ? 1 : 1)) : (isSwitchingVote ? -1 : 0)),
+                  userVote: isSameVote ? undefined : voteType,
+                }
+              }
             };
           }
-          return post;
-        }) || [];
+        }
+        // Handle posts list update
+        else if (old?.data?.posts) {
+          const updatedPosts = old.data.posts.map((post: Post) => {
+            if (post.id === postId) {
+              const isSameVote = post.userVote === voteType;
+              const isSwitchingVote = post.userVote && post.userVote !== voteType;
 
-        return { data: { posts: updatedPosts } };
+              return {
+                ...post,
+                upvotes: post.upvotes +
+                  (voteType === 'up' ? (isSameVote ? -1 : (isSwitchingVote ? 1 : 1)) : (isSwitchingVote ? -1 : 0)),
+                downvotes: post.downvotes +
+                  (voteType === 'down' ? (isSameVote ? -1 : (isSwitchingVote ? 1 : 1)) : (isSwitchingVote ? -1 : 0)),
+                userVote: isSameVote ? undefined : voteType,
+              };
+            }
+            return post;
+          });
+
+          return { data: { posts: updatedPosts } };
+        }
+        return old;
       });
 
-      return { previousPosts };
+      return { previousData };
     },
     onError: (error, _variables, context) => {
-      if (context?.previousPosts)
-        queryClient.setQueryData(queryKey, context.previousPosts);
+      if (context?.previousData)
+        queryClient.setQueryData(queryKey, context.previousData);
 
       error.stack && console.log(error.stack);
       toast({

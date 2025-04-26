@@ -58,11 +58,14 @@ const CommunityPage = () => {
 
       queryClient.setQueryData(['community', id], (old: any) => ({
         data: {
+          ...old.data,
           community: {
             ...old.data.community,
             isMember: join,
             memberCount: old.data.community.memberCount + (join ? 1 : -1),
-            members: old.data.community.members.map((member: User) => member.id === user?.id ? { ...user, isMember: join } : member)
+            members: join
+              ? [...old.data.community.members, user]
+              : old.data.community.members.filter((member: User) => member.id !== user?.id)
           }
         }
       }));
@@ -97,8 +100,7 @@ const CommunityPage = () => {
         title: 'Success',
         description: 'Community deleted successfully',
       });
-      // Redirect to communities page
-      window.location.href = '/communities';
+      navigate('/communities');
     },
     onError: (error: any) => {
       toast({
@@ -120,14 +122,91 @@ const CommunityPage = () => {
 
   if (isLoading) {
     return (
-      <div className="space-y-4">
-        <Skeleton className="h-48 w-full" />
-        <div className="container max-w-6xl mx-auto px-4">
-          <Skeleton className="h-8 w-48 mb-2" />
-          <Skeleton className="h-4 w-full max-w-2xl mb-4" />
-          <div className="flex gap-4">
-            <Skeleton className="h-10 w-24" />
-            <Skeleton className="h-10 w-24" />
+      <div className="min-h-screen bg-background">
+        {/* Banner Skeleton */}
+        <div className="h-32 sm:h-48 relative">
+          <Skeleton className="absolute inset-0" />
+        </div>
+
+        {/* Main Content */}
+        <div className="container max-w-8xl mx-auto px-2 sm:px-4">
+          <div className="flex flex-col lg:flex-row gap-4 sm:gap-6">
+            {/* Left Content */}
+            <div className="flex-1 -mt-8 sm:-mt-16 relative z-10">
+              {/* Community Info Card */}
+              <div className="rounded-lg border bg-card shadow-lg p-4 sm:p-6 mb-4 sm:mb-6">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-4">
+                      <Skeleton className="h-16 w-16 rounded-full" />
+                      <div className="space-y-2">
+                        <Skeleton className="h-6 w-48" />
+                        <Skeleton className="h-4 w-32" />
+                      </div>
+                    </div>
+                    <Skeleton className="h-4 w-full max-w-2xl" />
+                    <Skeleton className="h-4 w-3/4 max-w-xl" />
+                  </div>
+                  <Skeleton className="h-10 w-32" />
+                </div>
+                <div className="flex flex-wrap items-center gap-4 mt-4">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-4 w-24" />
+                </div>
+              </div>
+
+              {/* Posts Section */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Skeleton className="h-6 w-24" />
+                  <Skeleton className="h-8 w-28" />
+                </div>
+                {Array(3).fill(0).map((_, i) => (
+                  <div key={i} className="rounded-lg border bg-card p-4 space-y-4">
+                    <div className="flex items-center gap-3">
+                      <Skeleton className="h-8 w-8 rounded-full" />
+                      <div className="space-y-1">
+                        <Skeleton className="h-4 w-32" />
+                        <Skeleton className="h-3 w-24" />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Skeleton className="h-5 w-3/4" />
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-2/3" />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <Skeleton className="h-8 w-20" />
+                        <Skeleton className="h-8 w-20" />
+                      </div>
+                      <Skeleton className="h-8 w-24" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Right Sidebar */}
+            <div className="hidden lg:block lg:w-80 lg:-mt-16 relative z-10">
+              <div className="rounded-lg border bg-card shadow-lg p-4 sticky top-4">
+                <div className="flex items-center justify-between mb-4">
+                  <Skeleton className="h-5 w-20" />
+                  <Skeleton className="h-4 w-16" />
+                </div>
+                <div className="space-y-4">
+                  {Array(5).fill(0).map((_, i) => (
+                    <div key={i} className="flex items-center gap-3">
+                      <Skeleton className="h-8 w-8 rounded-full" />
+                      <div className="space-y-1">
+                        <Skeleton className="h-4 w-32" />
+                        <Skeleton className="h-3 w-24" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

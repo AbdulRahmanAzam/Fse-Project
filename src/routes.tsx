@@ -9,6 +9,8 @@ import CommunityPage from './pages/community-page'
 import CreateCommunityPage from './pages/create-community-page'
 import CreatePostPage from './pages/create-post-page'
 import EditPostPage from './pages/edit-post-page'
+import PostPage from './pages/post-page'
+import NotFoundPage from './pages/not-found-page';
 
 function AppRoutes() {
   return (
@@ -17,11 +19,13 @@ function AppRoutes() {
       <Route path="/" element={<ProtectedRoute permission="member"><MainLayout /></ProtectedRoute>}>
         <Route index element={<HomePage />} />
         <Route path="/communities" element={<CommunitiesPage />} />
-        <Route path="/community/:id" element={<CommunityPage />} />
         <Route path="/community/create" element={<ProtectedRoute permission="admin"><CreateCommunityPage /></ProtectedRoute>} />
+        <Route path="/community/:id" element={<CommunityPage />} />
         <Route path="/community/:id/create-post" element={<CreatePostPage />} />
         <Route path="/community/:id/edit-post/:postId" element={<EditPostPage />} />
+        <Route path="/community/:id/post/:postId" element={<PostPage />} />
       </Route>
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   )
 }

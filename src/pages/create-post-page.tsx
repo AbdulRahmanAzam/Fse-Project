@@ -119,7 +119,7 @@ const CreatePostPage = () => {
             Back to {community?.name}
           </Button>
         </div>
-        <Card>
+        <Card className='dark:bg-gray-950'>
           <CardHeader>
             <CardTitle>Create a New Post</CardTitle>
             <CardDescription>
