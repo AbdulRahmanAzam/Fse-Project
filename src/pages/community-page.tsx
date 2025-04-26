@@ -21,6 +21,7 @@ import CommunityEditForm from '@/components/community/community-edit-form';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { useAuthStore } from '@/lib/stores/use-auth-store';
 import PostOverview from '@/components/posts/post-overview';
+import { cn } from '@/lib/utils';
 
 const useCommunityQuery = (id: string) => {
   const { data, isLoading, error, refetch } = useQuery({
@@ -118,6 +119,31 @@ const CommunityPage = () => {
         <Button variant="outline" onClick={() => refetch()}>Retry</Button>
       </div>
     );
+  }
+
+  const CommunityOptions = ({ className }: { className?: string }) => {
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon" className={cn("h-8 w-8", className)}>
+            <MoreVertical className="h-4 w-4 ml-2" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
+            <Pencil className="mr-2 h-4 w-4" />
+            Edit Community
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            className="text-destructive focus:text-destructive"
+            onClick={() => setShowDeleteDialog(true)}
+          >
+            <Trash2 className="mr-2 h-4 w-4" />
+            Delete Community
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    )
   }
 
   if (isLoading) {
@@ -250,7 +276,10 @@ const CommunityPage = () => {
               <CardContent className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-0">
                 <div>
                   <div className="flex items-center justify-between md:hidden mb-4">
-                    <h1 className="text-xl sm:text-2xl font-bold">{community.name}</h1>
+                    <div className='flex items-center justify-between gap-2'>
+                      <h1 className="text-xl sm:text-2xl font-bold">{community.name}</h1>
+                      {user?.isAdmin && <CommunityOptions className='block md:hidden' />}
+                    </div>
                     {/* Mobile Members Button */}
                     <Sheet>
                       <SheetTrigger asChild>
@@ -295,28 +324,7 @@ const CommunityPage = () => {
                   </div>
                   <div className="flex items-center gap-2">
                     <h1 className="text-xl sm:text-2xl font-bold mb-2 hidden md:block">{community.name}</h1>
-                    {user?.isAdmin && (
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
-                            <Pencil className="mr-2 h-4 w-4" />
-                            Edit Community
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            className="text-destructive focus:text-destructive"
-                            onClick={() => setShowDeleteDialog(true)}
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Delete Community
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    )}
+                    {user?.isAdmin && <CommunityOptions className='hidden md:block' />}
                   </div>
                   <p className="text-muted-foreground text-sm sm:text-base">{community.description}</p>
                 </div>
@@ -374,7 +382,7 @@ const CommunityPage = () => {
                   </Button>
                 )}
               </div>
-              
+
               {postsLoading ? (
                 <div className="space-y-4">
                   {Array(3).fill(0).map((_, i) => (
@@ -439,28 +447,28 @@ const CommunityPage = () => {
                     {community.members
                       ?.sort((a, b) => (a.role === 'admin' ? -1 : 1) - (b.role === 'admin' ? -1 : 1))
                       .map((member, index) => (
-                      <div key={index} className="flex items-center gap-3">
-                        <Avatar className="h-8 w-8">
-                          <AvatarImage src={member.avatar} alt={member.username} />
-                          <AvatarFallback>
-                            {member.username?.charAt(0).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <p className="text-sm font-medium truncate">
-                              {member.displayName || member.username}
+                        <div key={index} className="flex items-center gap-3">
+                          <Avatar className="h-8 w-8">
+                            <AvatarImage src={member.avatar} alt={member.username} />
+                            <AvatarFallback>
+                              {member.username?.charAt(0).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <p className="text-sm font-medium truncate">
+                                {member.displayName || member.username}
+                              </p>
+                              {member.role === 'admin' && (
+                                <Crown className="h-3 w-3 text-yellow-500 flex-shrink-0" />
+                              )}
+                            </div>
+                            <p className="text-xs text-muted-foreground truncate">
+                              @{member.username}
                             </p>
-                            {member.role === 'admin' && (
-                              <Crown className="h-3 w-3 text-yellow-500 flex-shrink-0" />
-                            )}
                           </div>
-                          <p className="text-xs text-muted-foreground truncate">
-                            @{member.username}
-                          </p>
                         </div>
-                      </div>
-                    ))}
+                      ))}
                   </div>
                 </ScrollArea>
               </CardContent>

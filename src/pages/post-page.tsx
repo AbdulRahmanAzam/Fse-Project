@@ -165,12 +165,86 @@ const PostPage = () => {
 
   if (postLoading || commentsLoading) {
     return (
-      <div className="min-h-screen bg-background py-8">
-        <div className="container max-w-4xl mx-auto px-4">
+      <div className="min-h-screen bg-background py-4 sm:py-8">
+        <div className="container max-w-4xl mx-auto px-2 sm:px-4">
+          {/* Back Button Skeleton */}
+          <div className="mb-4">
+            <Skeleton className="h-9 w-32" />
+          </div>
+
+          {/* Post Card Skeleton */}
+          <div className="rounded-lg border bg-card shadow-lg mb-6">
+            <div className="p-4 sm:p-6">
+              {/* Post Header Skeleton */}
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <Skeleton className="h-8 w-8 sm:h-10 sm:w-10 rounded-full" />
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-3 w-24" />
+                  </div>
+                </div>
+                <Skeleton className="h-8 w-8 rounded-full" />
+              </div>
+
+              {/* Post Title Skeleton */}
+              <Skeleton className="h-8 w-3/4 mb-3 sm:mb-4" />
+
+              {/* Post Image Skeleton */}
+              <Skeleton className="h-48 sm:h-64 w-full rounded-lg mb-3 sm:mb-4" />
+
+              {/* Post Content Skeleton */}
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-4 w-1/2" />
+              </div>
+            </div>
+
+            {/* Post Footer Skeleton */}
+            <div className="border-t p-4 flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <Skeleton className="h-8 w-8" />
+                <Skeleton className="h-8 w-8" />
+              </div>
+              <Skeleton className="h-4 w-16" />
+            </div>
+          </div>
+
+          {/* Comment Form Skeleton */}
+          <div className="rounded-lg border bg-card p-4 mb-6">
+            <div className="flex gap-3 sm:gap-4">
+              <Skeleton className="h-8 w-8 sm:h-10 sm:w-10 rounded-full flex-shrink-0" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-24 w-full" />
+                <Skeleton className="h-9 w-24" />
+              </div>
+            </div>
+          </div>
+
+          {/* Comments Skeleton */}
           <div className="space-y-4">
-            <Skeleton className="h-8 w-48" />
-            <Skeleton className="h-96 w-full" />
-            <Skeleton className="h-32 w-full" />
+            {Array(3).fill(0).map((_, i) => (
+              <div key={i} className="rounded-lg border bg-card p-4">
+                <div className="flex gap-3 sm:gap-4">
+                  <Skeleton className="h-8 w-8 sm:h-10 sm:w-10 rounded-full flex-shrink-0" />
+                  <div className="flex-1 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Skeleton className="h-4 w-32" />
+                      <Skeleton className="h-3 w-24" />
+                    </div>
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-3/4" />
+                    <div className="flex items-center gap-4 mt-2">
+                      <Skeleton className="h-6 w-6" />
+                      <Skeleton className="h-6 w-6" />
+                      <Skeleton className="h-6 w-16" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
