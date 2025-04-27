@@ -7,7 +7,6 @@ import {
   Menu,
   ChevronDown,
   FileText,
-  StickyNote,
   AlertCircle
 } from 'lucide-react'
 
@@ -182,11 +181,7 @@ const Header = () => {
                     >
                       <div className="flex w-full gap-4">
                         <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
-                          {post.files?.length ? (
-                            <FileText className="h-4 w-5 text-muted-foreground" />
-                          ) : (
-                            <StickyNote className="h-4 w-5 text-muted-foreground" />
-                          )}
+                          <FileText className="h-4 w-5 text-muted-foreground" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium truncate">
