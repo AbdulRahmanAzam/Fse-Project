@@ -91,10 +91,10 @@ const CommunitiesPage = () => {
       {/* Header */}
       <div className="bg-background border-b border-gray-200 dark:border-gray-800 sticky top-0 z-10 dark:bg-gray-950">
         <div className="container max-w-6xl mx-auto px-4 py-3">
-          <div className="flex items-center justify-between">
-            <h1 className="text-xl md:text-2xl mr-4 md:mr-0 font-bold">Communities</h1>
-            <div className="flex items-center gap-4">
-              <div className="relative w-full md:w-96">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <h1 className="text-xl md:text-2xl font-bold">Communities</h1>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+              <div className="relative w-full sm:w-96">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
                   placeholder="Search communities..."

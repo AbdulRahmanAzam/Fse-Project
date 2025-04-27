@@ -125,7 +125,7 @@ const CreatePostPage = () => {
     onSuccess: () => {
       toast({
         title: 'Success',
-        description: 'Post created successfully and is now pending approval',
+        description: 'Post created successfully' + (user?.role !== 'admin' && selectedFiles.length > 0 ? ' and is now pending approval' : ''),
       });
       queryClient.invalidateQueries({ queryKey: ['posts', id] });
       navigate(`/community/${id}`);

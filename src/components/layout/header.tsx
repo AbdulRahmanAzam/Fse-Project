@@ -1,9 +1,9 @@
 import { Link, useNavigate } from 'react-router-dom'
 
-import { 
+import {
   Bell,
-  User, 
-  Handshake, 
+  User,
+  Handshake,
   Menu,
   ChevronDown,
   FileText,
@@ -12,26 +12,26 @@ import {
 
 import { Button } from '../ui/button'
 
-import { 
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger 
+  DropdownMenuTrigger
 } from '../ui/dropdown-menu'
 
-import { 
-  Sheet, 
-  SheetContent, 
+import {
+  Sheet,
+  SheetContent,
   SheetTrigger,
   SheetTitle,
 } from '../ui/sheet'
 
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogTrigger 
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger
 } from '../ui/dialog'
 
 import { useAuthStore } from '@/lib/stores/use-auth-store'
@@ -104,10 +104,10 @@ const Header = () => {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   {developers.map((dev, index) => (
                     <div key={index} className="flex flex-col items-center text-center">
-                      <img 
-                        src={dev.avatar} 
-                        alt={dev.name} 
-                        className="h-24 w-24 rounded-full mb-3" 
+                      <img
+                        src={dev.avatar}
+                        alt={dev.name}
+                        className="h-24 w-24 rounded-full mb-3"
                       />
                       <h3 className="text-lg font-semibold">{dev.name}</h3>
                       <p className="text-sm text-primary mb-2">{dev.role}</p>
@@ -174,7 +174,7 @@ const Header = () => {
                   </div>
                 ) : (
                   pendingPosts.map((post) => (
-                    <DropdownMenuItem 
+                    <DropdownMenuItem
                       key={post.id}
                       className="flex flex-col items-start p-2 focus:bg-accent"
                       onClick={() => navigate(`/pending-posts`)}
@@ -280,7 +280,7 @@ const Header = () => {
                     <span className="text-xl font-bold">GenZ Scholars</span>
                   </div>
                 </div>
-                
+
                 {!!user && (
                   <div className="flex items-center gap-3 mb-4 p-3 bg-muted/30 rounded-lg">
                     <div onClick={() => navigate('/profile')} className="h-10 w-10 rounded-full bg-muted overflow-hidden">
@@ -319,6 +319,16 @@ const Header = () => {
                       </Button>
                     </div>
                   )}
+
+                  <div className="space-y-2">
+                    <div className="text-sm font-medium">Navigation</div>
+                    <Button variant="ghost" className="w-full justify-start" asChild>
+                      <Link to="/my-communities">My Communities</Link>
+                    </Button>
+                    <Button variant="ghost" className="w-full justify-start" asChild>
+                      <Link to="/communities">Explore</Link>
+                    </Button>
+                  </div>
 
                   <div className="space-y-2">
                     <div className="text-sm font-medium">Account</div>

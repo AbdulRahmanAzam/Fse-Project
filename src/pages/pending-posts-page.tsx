@@ -115,14 +115,14 @@ export default function PendingPostsPage() {
 
   return (
     <div className="container py-6 space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Pending Posts</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold">Pending Posts</h1>
           <p className="text-sm text-muted-foreground mt-1">
             Review and moderate posts before they appear in communities
           </p>
         </div>
-        <div className="flex items-center gap-2 bg-muted px-4 py-2 rounded-lg">
+        <div className="flex items-center gap-2 bg-muted px-4 py-2 rounded-lg self-start sm:self-auto">
           <XCircle className="h-4 w-4 text-muted-foreground" />
           <span className="text-sm font-medium">{count} posts pending</span>
         </div>
@@ -132,14 +132,14 @@ export default function PendingPostsPage() {
         {posts.map((post) => (
           <Card key={post.id} className="group hover:border-border/80 transition-colors">
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="space-y-1">
                   <CardTitle className="text-xl">{post.title}</CardTitle>
-                  <CardDescription className="flex items-center gap-2">
+                  <CardDescription className="flex flex-wrap items-center gap-2">
                     <span>Posted by {post.user.displayName || post.user.username}</span>
-                    <span>•</span>
+                    <span className="hidden sm:inline">•</span>
                     <span>in {post.community.name}</span>
-                    <span>•</span>
+                    <span className="hidden sm:inline">•</span>
                     <span>{formatTime(new Date(post.createdAt))}</span>
                   </CardDescription>
                 </div>
@@ -147,7 +147,7 @@ export default function PendingPostsPage() {
                   <Button 
                     variant="outline" 
                     size="sm"
-                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                    className="text-destructive hover:text-destructive hover:bg-destructive/10 flex-1 sm:flex-none"
                     onClick={() => approveRejectPost({ postId: post.id, status: 'reject' })}
                     disabled={isPending}
                   >
@@ -155,7 +155,7 @@ export default function PendingPostsPage() {
                   </Button>
                   <Button
                     size="sm"
-                    className="bg-green-600 hover:bg-green-700"
+                    className="bg-green-600 hover:bg-green-700 flex-1 sm:flex-none"
                     onClick={() => approveRejectPost({ postId: post.id, status: 'approve' })}
                     disabled={isPending}
                   >
@@ -189,11 +189,11 @@ export default function PendingPostsPage() {
                         rel="noopener noreferrer"
                         className="flex items-center gap-2 p-2 rounded-md border bg-muted/50 hover:bg-muted transition-colors"
                       >
-                        <FileIcon className="h-4 w-4 text-muted-foreground" />
+                        <FileIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                         <span className="text-sm truncate">
                           {cleanFilePath(file.path, true)}
                         </span>
-                        <span className="text-xs text-muted-foreground ml-auto">
+                        <span className="text-xs text-muted-foreground ml-auto flex-shrink-0">
                           {(file.size / 1024).toFixed(1)} KB
                         </span>
                       </a>
