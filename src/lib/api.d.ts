@@ -9,6 +9,13 @@ export interface ApiResponse extends Record<string, any> {
   status: number;
 }
 
+export interface PostFile {
+  id: number;
+  path: string;
+  size: number;
+  createdAt: string;
+}
+
 export interface Post {
   id: number;
   title: string;
@@ -26,6 +33,10 @@ export interface Post {
     tags: string;
     image?: string;
   };
+  fileCount: number;
+  files?: PostFile[];
+  isPending?: boolean;
+  isPinned: boolean;
   createdAt: string;
   updatedAt: string;
   upvotes: number;

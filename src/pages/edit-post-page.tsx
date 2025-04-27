@@ -8,15 +8,16 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { toast } from '@/components/ui/use-toast';
 import api from '@/lib/api';
 import { useForm } from 'react-hook-form';
-import { ArrowLeft } from 'lucide-react';
-import { Post } from '@/lib/api.d';
-import { useEffect } from 'react';
+import { ArrowLeft, Upload, X, FileText } from 'lucide-react';
+import { Post, PostFile } from '@/lib/api.d';
+import { useEffect, useRef, useState } from 'react';
 import { useAuthStore } from '@/lib/stores/use-auth-store';
+import { cleanFilePath } from '@/lib/utils';
 
 type FormData = {
   title: string;
   content: string;
-  image?: string;
+  files?: FileList;
 };
 
 const usePostQuery = (postId: string) => {
@@ -33,7 +34,10 @@ const EditPostPage = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { data: post, isLoading, error } = usePostQuery(postId!);
-  const { register, handleSubmit, formState: { errors }, reset } = useForm<FormData>();
+  const { register, handleSubmit, formState: { errors }, reset, setValue, watch } = useForm<FormData>();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [existingFiles, setExistingFiles] = useState<PostFile[]>([]);
 
   useEffect(() => {
     if (post) {
@@ -47,15 +51,84 @@ const EditPostPage = () => {
       } else {
         reset({
           title: post.title,
-          content: post.content,
-          image: post.image
+          content: post.content
         });
+        if (post.files) {
+          setExistingFiles(post.files);
+        }
       }
     }
   }, [post, user, navigate, id, reset]);
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const fileList = e.target.files;
+    if (!fileList) return;
+
+    const files = Array.from(fileList);
+    if (selectedFiles.length + files.length + existingFiles.length > 5) {
+      toast({
+        title: 'Error',
+        description: 'You can only upload up to 5 files',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
+    const invalidFiles = files.filter(file => file.size > 5 * 1024 * 1024);
+    if (invalidFiles.length > 0) {
+      toast({
+        title: 'Error',
+        description: 'Each file must be less than 5MB',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setSelectedFiles(prev => [...prev, ...files]);
+    
+    const dt = new DataTransfer();
+    [...selectedFiles, ...files].forEach(file => dt.items.add(file));
+    setValue('files', dt.files);
+  };
+
+  const removeFile = (index: number) => {
+    setSelectedFiles(prev => {
+      const newFiles = [...prev];
+      newFiles.splice(index, 1);
+      
+      const dt = new DataTransfer();
+      newFiles.forEach(file => dt.items.add(file));
+      setValue('files', dt.files);
+      
+      return newFiles;
+    });
+  };
+
+  const removeExistingFile = (fileId: number) => {
+    setExistingFiles(prev => prev.filter(file => file.id !== fileId));
+  };
+
   const { mutate: updatePost, isPending } = useMutation({
-    mutationFn: (data: FormData) => api.patch(`/post/${postId}`, data),
+    mutationFn: async (data: FormData) => {
+      const formData = new FormData();
+      formData.append('title', data.title);
+      formData.append('content', data.content.trim() ?? '');
+      
+      formData.append('existingFiles', JSON.stringify(existingFiles.map(file => file.path)));
+      
+      const currentFiles = watch('files');
+      if (currentFiles) {
+        Array.from(currentFiles).forEach(file => {
+          formData.append('files', file);
+        });
+      }
+      
+      return api.patch(`/post/${postId}`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+    },
     onSuccess: () => {
       toast({
         title: 'Success',
@@ -65,6 +138,7 @@ const EditPostPage = () => {
       navigate(`/community/${id}`);
     },
     onError: (error: any) => {
+      error.stack && console.error(error.stack);
       toast({
         title: error.message || 'Error',
         description: error.info || 'Failed to update post',
@@ -150,11 +224,6 @@ const EditPostPage = () => {
                 <Textarea
                   id="content"
                   {...register("content", {
-                    required: "Content is required",
-                    minLength: {
-                      value: 10,
-                      message: "Content must be at least 10 characters"
-                    },
                     maxLength: {
                       value: 10000,
                       message: "Content must be less than 10000 characters"
@@ -167,18 +236,93 @@ const EditPostPage = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="image">Image URL (optional)</Label>
-                <Input
-                  id="image"
-                  {...register("image", {
-                    pattern: {
-                      value: /^https?:\/\/.+$/,
-                      message: "Must be a valid URL"
-                    }
-                  })}
-                  placeholder="https://example.com/image.jpg"
-                />
-                {errors.image && <p className="text-xs text-red-500 dark:text-red-400">{errors.image.message}</p>}
+                <Label>Attach Files (optional)</Label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="file"
+                    className="hidden"
+                    multiple
+                    accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.gif"
+                    {...register('files')}
+                    onChange={handleFileChange}
+                    ref={fileInputRef}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full"
+                    disabled={selectedFiles.length + existingFiles.length >= 5}
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    Choose Files ({selectedFiles.length + existingFiles.length}/5)
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Supported formats: PDF, DOC, DOCX, TXT, JPG, PNG, GIF (max 5MB per file)
+                </p>
+                
+                {existingFiles.length > 0 && (
+                  <div className="mt-4 space-y-2">
+                    <h3 className="text-sm font-medium">Existing Files</h3>
+                    {existingFiles.map((file) => (
+                      <div
+                        key={file.id}
+                        className="flex items-center justify-between p-2 bg-muted rounded-md"
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                          <div className="min-w-0">
+                            <p className="text-sm truncate">{cleanFilePath(file.path, true)}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {(file.size / 1024 / 1024).toFixed(2)} MB
+                            </p>
+                          </div>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0"
+                          onClick={() => removeExistingFile(file.id)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {selectedFiles.length > 0 && (
+                  <div className="mt-4 space-y-2">
+                    <h3 className="text-sm font-medium">New Files</h3>
+                    {selectedFiles.map((file, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between p-2 bg-muted rounded-md"
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                          <div className="min-w-0">
+                            <p className="text-sm truncate">{file.name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {(file.size / 1024 / 1024).toFixed(2)} MB
+                            </p>
+                          </div>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0"
+                          onClick={() => removeFile(index)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </CardContent>
             

@@ -11,6 +11,7 @@ import CreatePostPage from './pages/create-post-page'
 import EditPostPage from './pages/edit-post-page'
 import PostPage from './pages/post-page'
 import NotFoundPage from './pages/not-found-page';
+import PendingPostsPage from './pages/pending-posts-page';
 
 function AppRoutes() {
   return (
@@ -24,6 +25,7 @@ function AppRoutes() {
         <Route path="/community/:id/create-post" element={<CreatePostPage />} />
         <Route path="/community/:id/edit-post/:postId" element={<EditPostPage />} />
         <Route path="/community/:id/post/:postId" element={<PostPage />} />
+        <Route path="/pending-posts" element={<ProtectedRoute permission="admin"><PendingPostsPage /></ProtectedRoute>} />
       </Route>
       <Route path="*" element={<NotFoundPage />} />
     </Routes>

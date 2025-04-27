@@ -14,3 +14,10 @@ export function formatTime(date: Date) {
   if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
   return `${Math.floor(diffInSeconds / 86400)}d ago`;
 }
+
+export const cleanFilePath = (path: string, clearId: boolean = false) => {
+  let cleanPath = path.replace(/^uploads\\/, '');
+  if (clearId)
+    cleanPath = cleanPath.replace(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}-/, '');
+  return cleanPath;
+};

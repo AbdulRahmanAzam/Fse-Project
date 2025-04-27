@@ -4,7 +4,7 @@ import api from "@/lib/api";
 import { Post } from "@/lib/api.d";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, MessageCircle, MoreVertical, Pencil, Trash2 } from "lucide-react";
+import { ArrowLeft, MessageCircle, MoreVertical, Pencil, Trash2, FileText, Download } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -22,7 +22,7 @@ import { useState } from "react";
 import { useAuthStore } from "@/lib/stores/use-auth-store";
 import CommentCard from "@/components/comments/comment-card";
 import { Comment } from "@/lib/api.d";
-import { formatTime } from "@/lib/utils";
+import { cleanFilePath, formatTime } from "@/lib/utils";
 import { useForm } from "react-hook-form";
 import {
   Tooltip,
@@ -128,6 +128,7 @@ const useDeletePostMutation = (postId: string, communityId: number) => {
       navigate(`/community/${communityId}`);
     },
     onError: (error: any) => {
+      error.stack && console.error(error.stack);
       toast({
         title: error.message || 'Error',
         description: error.info || 'Failed to delete post',
@@ -147,13 +148,10 @@ const PostPage = () => {
   const { data: post, isLoading: postLoading, error: postError, refetch: postRefetch } = usePostQuery(postId!);
   const { data: comments, isLoading: commentsLoading, error: commentsError } = useCommentsQuery(postId!);
   const { votePost } = useVotePost(['post', postId]);
-  // const { voteComment } = useVoteComment(['comments', postId]);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const { register, handleSubmit, reset } = useForm<CommentFormData>();
   const { createComment } = useCreateCommentMutation(postId!, reset);
-  // const { deleteComment } = useDeleteCommentMutation(postId!);
   const { deletePost } = useDeletePostMutation(postId!, post?.community.id!);
-  // const { editComment } = useEditCommentMutation(postId!);
 
   const handleVote = (postId: number, voteType: 'up' | 'down') => {
     votePost({ postId, voteType });
@@ -298,15 +296,15 @@ const PostPage = () => {
                             <p className="text-xs sm:text-sm text-muted-foreground">
                               {formatTime(new Date(post?.createdAt || ''))}
                             </p>
-                            {post?.updatedAt !== post?.createdAt && (
+                            {Math.abs(new Date(post?.createdAt || '').getTime() - new Date(post?.updatedAt || '').getTime()) > 5000 && (
                               <span className="text-xs sm:text-sm text-muted-foreground">(edited)</span>
                             )}
                           </div>
                         </TooltipTrigger>
                         <TooltipContent>
                           <p className="text-sm">
-                            {new Date(post?.createdAt || '').toLocaleString()}
-                            {post?.updatedAt !== post?.createdAt && (
+                            Date Created: {new Date(post?.createdAt || '').toLocaleString()}
+                            {Math.abs(new Date(post?.createdAt || '').getTime() - new Date(post?.updatedAt || '').getTime()) > 5000 && (
                               <span className="block text-xs text-muted-foreground">
                                 Last edited: {new Date(post?.updatedAt || '').toLocaleString()}
                               </span>
@@ -361,6 +359,38 @@ const PostPage = () => {
               <div className="prose dark:prose-invert max-w-none text-sm sm:text-base">
                 {post?.content}
               </div>
+
+              {post?.files && post.files.length > 0 && (
+                <div className="mt-4 space-y-2">
+                  <h3 className="text-sm font-medium">Attached Files</h3>
+                  <div className="space-y-2">
+                    {post.files.map((file, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between p-2 bg-muted rounded-md hover:bg-muted/80 transition-colors"
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                          <div className="min-w-0">
+                            <p className="text-sm truncate">{cleanFilePath(file.path, true)}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {(file.size / 1024 / 1024).toFixed(2)} MB
+                            </p>
+                          </div>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0 flex-shrink-0"
+                          onClick={() => window.open(`${import.meta.env.VITE_API_URL}/post/file/${cleanFilePath(file.path)}`, '_blank')}
+                        >
+                          <Download className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </CardContent>
 
             <CardFooter className="flex items-center gap-3 sm:gap-4 px-4 sm:px-6 py-3 sm:py-4 border-t">

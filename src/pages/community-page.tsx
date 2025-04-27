@@ -258,7 +258,7 @@ const CommunityPage = () => {
             Back to Communities
           </Button>
         </div>
-        {community.image && (
+        {community?.image && (
           <img
             src={community.image}
             alt={community.name}
@@ -424,6 +424,7 @@ const CommunityPage = () => {
                       key={post.id}
                       post={{ ...post, community }}
                       queryKey={['posts', id!]}
+                      showPinned={true}
                     />
                   ))}
                 </div>

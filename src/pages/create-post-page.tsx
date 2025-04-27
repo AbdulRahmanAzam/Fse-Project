@@ -7,17 +7,17 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import api from '@/lib/api';
 import { useForm } from 'react-hook-form';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Upload, X, FileText } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { Community } from '@/lib/api.d';
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAuthStore } from '@/lib/stores/use-auth-store';
 import { useToast } from '@/components/ui/use-toast';
 
-type FormData = {
+type PostFormData = {
   title: string;
   content: string;
-  image?: string;
+  files?: FileList;
 };
 
 const useCommunityQuery = (id: string) => {
@@ -35,7 +35,9 @@ const CreatePostPage = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { data: community, isLoading, error } = useCommunityQuery(id!);
-  const { register, handleSubmit, formState: { errors } } = useForm<FormData>();
+  const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm<PostFormData>();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
 
   useEffect(() => {
     if (!community) {
@@ -57,17 +59,79 @@ const CreatePostPage = () => {
     }
   }, [community, navigate, user?.id, id]);
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const fileList = e.target.files;
+    if (!fileList) return;
+
+    const files = Array.from(fileList);
+    if (selectedFiles.length + files.length > 5) {
+      toast({
+        title: 'Error',
+        description: 'You can only upload up to 5 files',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
+    const invalidFiles = files.filter(file => file.size > 5 * 1024 * 1024);
+    if (invalidFiles.length > 0) {
+      toast({
+        title: 'Error',
+        description: 'Each file must be less than 5MB',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setSelectedFiles(prev => [...prev, ...files]);
+    
+    const dt = new DataTransfer();
+    [...selectedFiles, ...files].forEach(file => dt.items.add(file));
+    setValue('files', dt.files);
+  };
+
+  const removeFile = (index: number) => {
+    setSelectedFiles(prev => {
+      const newFiles = [...prev];
+      newFiles.splice(index, 1);
+      
+      const dt = new DataTransfer();
+      newFiles.forEach(file => dt.items.add(file));
+      setValue('files', dt.files);
+      
+      return newFiles;
+    });
+  };
+
   const { mutate: createPost, isPending } = useMutation({
-    mutationFn: (data: FormData) => api.post('/post', { ...data, communityId: id }),
+    mutationFn: async (data: PostFormData) => {
+      const formData = new FormData();
+      formData.append('title', data.title);
+      formData.append('content', data.content ?? '');
+      const currentFiles = watch('files');
+      if (currentFiles) {
+        Array.from(currentFiles).forEach(file => {
+          formData.append('files', file);
+        });
+      }
+      formData.append('communityId', id!);
+      
+      return api.post('/post', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+    },
     onSuccess: () => {
       toast({
         title: 'Success',
-        description: 'Post created successfully',
+        description: 'Post created successfully and is now pending approval',
       });
       queryClient.invalidateQueries({ queryKey: ['posts', id] });
       navigate(`/community/${id}`);
     },
     onError: (error: any) => {
+      error.stack && console.error(error.stack);
       toast({
         title: error.message || 'Error',
         description: error.info || 'Failed to create post',
@@ -75,10 +139,6 @@ const CreatePostPage = () => {
       });
     }
   });
-
-  const onSubmit = (data: FormData) => {
-    createPost(data);
-  };
 
   if (isLoading) {
     return (
@@ -126,7 +186,7 @@ const CreatePostPage = () => {
               Share your thoughts with the {community?.name} community.
             </CardDescription>
           </CardHeader>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={handleSubmit(data => createPost(data))} className="space-y-4">
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="title">Post Title</Label>
@@ -153,11 +213,6 @@ const CreatePostPage = () => {
                 <Textarea
                   id="content"
                   {...register("content", {
-                    required: "Content is required",
-                    minLength: {
-                      value: 10,
-                      message: "Content must be at least 10 characters"
-                    },
                     maxLength: {
                       value: 10000,
                       message: "Content must be less than 10000 characters"
@@ -170,18 +225,61 @@ const CreatePostPage = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="image">Image URL (optional)</Label>
-                <Input
-                  id="image"
-                  {...register("image", {
-                    pattern: {
-                      value: /^https?:\/\/.+$/,
-                      message: "Must be a valid URL"
-                    }
-                  })}
-                  placeholder="https://example.com/image.jpg"
-                />
-                {errors.image && <p className="text-xs text-red-500 dark:text-red-400">{errors.image.message}</p>}
+                <Label>Attach Files (optional)</Label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="file"
+                    className="hidden"
+                    multiple
+                    accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.gif"
+                    {...register('files')}
+                    onChange={handleFileChange}
+                    ref={fileInputRef}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full"
+                    disabled={selectedFiles.length >= 5}
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    Choose Files ({selectedFiles.length}/5)
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Supported formats: PDF, DOC, DOCX, TXT, JPG, PNG, GIF (max 5MB per file)
+                </p>
+                
+                {selectedFiles.length > 0 && (
+                  <div className="mt-4 space-y-2">
+                    {selectedFiles.map((file, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between p-2 bg-muted rounded-md"
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                          <div className="min-w-0">
+                            <p className="text-sm truncate">{file.name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {(file.size / 1024 / 1024).toFixed(2)} MB
+                            </p>
+                          </div>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0"
+                          onClick={() => removeFile(index)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </CardContent>
             

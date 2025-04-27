@@ -2,15 +2,14 @@ import { Link, useNavigate } from 'react-router-dom'
 
 import { 
   Bell,
-  Sun, 
-  Moon, 
   User, 
   Handshake, 
   Menu,
   ChevronDown,
-  Users
+  FileText,
+  StickyNote,
+  AlertCircle
 } from 'lucide-react'
-import { useTheme } from '../theme/theme-provider'
 
 import { Button } from '../ui/button'
 
@@ -26,7 +25,6 @@ import {
   SheetContent, 
   SheetTrigger,
   SheetTitle,
-  SheetHeader
 } from '../ui/sheet'
 
 import { 
@@ -39,6 +37,8 @@ import {
 
 import { useAuthStore } from '@/lib/stores/use-auth-store'
 import { ModeToggle } from '../theme/mode-toggle'
+import { usePendingPostsQuery } from '@/lib/hooks/use-pending-posts'
+import { formatTime } from '@/lib/utils'
 
 // Developer information
 const developers = [
@@ -69,14 +69,9 @@ const developers = [
 ];
 
 const Header = () => {
-  const { theme, setTheme } = useTheme();
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
-  // const [searchQuery, setSearchQuery] = useState('');
-  
-  const toggleTheme = () => {
-    setTheme(theme === 'dark' ? 'light' : 'dark')
-  }
+  const { posts: pendingPosts, count: pendingCount, isLoading, error } = usePendingPostsQuery(user!.isAdmin, 3);
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border bg-background dark:bg-gray-950">
@@ -140,36 +135,84 @@ const Header = () => {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="relative">
                 <Bell className="h-5 w-5" />
-                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-white">
-                  3
-                </span>
+                {!isLoading && pendingCount > 0 && (
+                  <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-white">
+                    {pendingCount}
+                  </span>
+                )}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-80">
               <div className="flex items-center justify-between px-4 py-2">
-                <h3 className="font-medium">Notifications</h3>
-                <Button variant="ghost" size="sm">Mark all as read</Button>
-              </div>
-              <div className="max-h-96 overflow-y-auto">
-                {[1, 2, 3].map((i) => (
-                  <DropdownMenuItem key={i} className="flex flex-col items-start p-4 focus:bg-accent">
-                    <div className="flex w-full gap-4">
-                      <div className="h-8 w-8 rounded-full bg-muted"></div>
-                      <div className="flex-1">
-                        <p className="text-sm">
-                          <span className="font-medium">User {i}</span> requested materials for Machine Learning course
-                        </p>
-                        <p className="text-xs text-muted-foreground">2 hours ago</p>
-                      </div>
-                    </div>
-                  </DropdownMenuItem>
-                ))}
-              </div>
-              <div className="border-t p-2">
-                <Button variant="ghost" size="sm" className="w-full justify-center">
-                  View all notifications
+                <h3 className="font-medium">Pending Posts</h3>
+                <Button variant="ghost" size="sm" asChild>
+                  <Link to="/pending-posts">View All</Link>
                 </Button>
               </div>
+              <div className="max-h-96 overflow-y-auto">
+                {isLoading ? (
+                  <div className="p-4 space-y-4">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="flex items-start gap-4">
+                        <div className="h-8 w-8 rounded-full bg-muted animate-pulse" />
+                        <div className="flex-1 space-y-2">
+                          <div className="h-4 w-3/4 bg-muted rounded animate-pulse" />
+                          <div className="h-3 w-1/2 bg-muted rounded animate-pulse" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : error ? (
+                  <div className="p-4 text-center">
+                    <AlertCircle className="h-5 w-5 text-destructive mx-auto mb-2" />
+                    <p className="text-sm text-muted-foreground">
+                      Failed to load pending posts
+                    </p>
+                  </div>
+                ) : pendingPosts.length === 0 ? (
+                  <div className="p-4 text-center text-sm text-muted-foreground">
+                    No pending posts to review
+                  </div>
+                ) : (
+                  pendingPosts.map((post) => (
+                    <DropdownMenuItem 
+                      key={post.id}
+                      className="flex flex-col items-start p-2 focus:bg-accent"
+                      onClick={() => navigate(`/pending-posts`)}
+                    >
+                      <div className="flex w-full gap-4">
+                        <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
+                          {post.files?.length ? (
+                            <FileText className="h-4 w-5 text-muted-foreground" />
+                          ) : (
+                            <StickyNote className="h-4 w-5 text-muted-foreground" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">
+                            {post.title}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            by {post.user.displayName || post.user.username} in {post.community.name}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {formatTime(new Date(post.createdAt))}
+                          </p>
+                        </div>
+                      </div>
+                    </DropdownMenuItem>
+                  ))
+                )}
+              </div>
+              {!isLoading && !error && pendingCount > 3 && (
+                <div className="border-t p-2">
+                  <Button variant="ghost" size="sm" className="w-full justify-center" asChild>
+                    <Link to="/pending-posts">
+                      View all {pendingCount} pending posts
+                    </Link>
+                  </Button>
+                </div>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>}
 
@@ -254,87 +297,59 @@ const Header = () => {
                     </div>
                     <div>
                       <p className="font-medium">{user.displayName || user.username}</p>
-                      <p className="font-light text-xs">{user.email}</p>
+                      <p className="text-sm text-muted-foreground">{user.email}</p>
                     </div>
                   </div>
                 )}
-                
-                <div className="flex flex-col gap-2 mt-4">
-                  <Button variant="ghost" className="justify-start" onClick={toggleTheme}>
-                    {theme === 'dark' ? (
-                      <><Sun className="mr-2 h-4 w-4" /> Light Mode</>
-                    ) : (
-                      <><Moon className="mr-2 h-4 w-4" /> Dark Mode</>
-                    )}
-                  </Button>
-                  
-                  <Sheet>
-                    <SheetTrigger asChild>
-                      <Button variant="ghost" className="justify-start">
-                        <Handshake className="mr-2 h-4 w-4" />
-                        <span>Team</span>
-                      </Button>
-                    </SheetTrigger>
-                    <SheetContent className="max-w-md" side="bottom">
-                      <SheetHeader>
-                        <SheetTitle>Meet Our Development Team</SheetTitle>
-                      </SheetHeader>
-                      <div className="py-4 space-y-6">
-                        {developers.map((dev, index) => (
-                          <div key={index} className="flex items-start space-x-4">
-                            <img 
-                              src={dev.avatar} 
-                              alt={dev.name} 
-                              className="h-12 w-12 rounded-full" 
-                            />
-                            <div>
-                              <h3 className="text-sm font-semibold">{dev.name}</h3>
-                              <p className="text-xs text-primary">{dev.role}</p>
-                              <p className="text-xs text-muted-foreground mt-1 mb-2">
-                                {dev.bio}
-                              </p>
-                              <div className="flex gap-2">
-                                <Button variant="outline" size="sm" className="h-7 px-2 text-xs" asChild>
-                                  <a href={dev.github} target="_blank" rel="noopener noreferrer">GitHub</a>
-                                </Button>
-                                <Button variant="outline" size="sm" className="h-7 px-2 text-xs" asChild>
-                                  <a href={dev.linkedin} target="_blank" rel="noopener noreferrer">LinkedIn</a>
-                                </Button>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </SheetContent>
-                  </Sheet>
-                  
-                  {user?.isAdmin && <Button variant="ghost" className="justify-start relative">
-                    <Bell className="mr-2 h-4 w-4" />
-                    <span>Notifications</span>
-                    <span className="absolute top-1/2 right-4 -translate-y-1/2 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-white">
-                      3
-                    </span>
-                  </Button>}
 
-                  <Button variant="ghost" className="justify-start" asChild>
-                    <Link to="/communities">
-                      <Users className="mr-2 h-4 w-4" />
-                      <span>Explore</span>
-                    </Link>
-                  </Button>
-                  
-                  <Button variant="ghost" className="justify-start" asChild>
-                    <Link to="/profile">
-                      <User className="mr-2 h-4 w-4" />
-                      <span>Profile</span>
-                    </Link>
-                  </Button>
-                  <Button variant="ghost" className="justify-start" asChild>
-                    <Link to="/settings">Settings</Link>
-                  </Button>
-                  <Button variant="ghost" className="justify-start" onClick={logout}>
-                    Sign Out
-                  </Button>
+                <div className="flex-1 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Theme</span>
+                    <ModeToggle />
+                  </div>
+
+                  {user?.isAdmin && (
+                    <div className="space-y-2">
+                      <div className="text-sm font-medium">Admin</div>
+                      <Button variant="ghost" className="w-full justify-start" asChild>
+                        <Link to="/pending-posts" className="flex items-center gap-2">
+                          <Bell className="h-4 w-4" />
+                          <span>Pending Posts</span>
+                          {pendingCount > 0 && (
+                            <span className="ml-auto flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-white">
+                              {pendingCount}
+                            </span>
+                          )}
+                        </Link>
+                      </Button>
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <div className="text-sm font-medium">Account</div>
+                    {!!user ? (
+                      <>
+                        <Button variant="ghost" className="w-full justify-start" asChild>
+                          <Link to="/profile">Profile</Link>
+                        </Button>
+                        <Button variant="ghost" className="w-full justify-start" asChild>
+                          <Link to="/settings">Settings</Link>
+                        </Button>
+                        <Button variant="ghost" className="w-full justify-start text-destructive" onClick={logout}>
+                          Sign Out
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <Button variant="ghost" className="w-full justify-start" asChild>
+                          <Link to="/auth">Sign In</Link>
+                        </Button>
+                        <Button className="w-full justify-start" asChild>
+                          <Link to="/auth">Sign Up</Link>
+                        </Button>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
             </SheetContent>

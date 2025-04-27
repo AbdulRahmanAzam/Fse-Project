@@ -5,7 +5,7 @@ import { Button } from "../ui/button";
 import { Collapsible, CollapsibleContent } from "../ui/collapsible";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../ui/dropdown-menu";
 import { Label } from "../ui/label";
-import { MoreHorizontal, MessageCircle, EyeOff, Pencil, Trash2 } from "lucide-react";
+import { MoreHorizontal, MessageCircle, EyeOff, Pencil, Trash2, Pin } from "lucide-react";
 import VoteButtons from "./vote-buttons";
 import { formatTime } from "@/lib/utils";
 import { cn } from "@/lib/utils";
@@ -25,10 +25,12 @@ import {
 
 const PostOverview = ({
   post,
-  queryKey
+  queryKey,
+  showPinned = false
 }: {
   post: Post,
-  queryKey: any[]
+  queryKey: any[],
+  showPinned?: boolean
 }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -60,6 +62,49 @@ const PostOverview = ({
     }
   });
 
+  const { mutate: togglePin } = useMutation({
+    mutationFn: () => {
+      if (post.isPinned) {
+        return api.patch(`/post/unpin/${post.id}`);
+      } else {
+        return api.patch(`/post/pin/${post.id}`);
+      }
+    },
+    onMutate: () => {
+      const previousData = queryClient.getQueryData(queryKey);
+
+      queryClient.setQueryData(queryKey, (old: any) => {
+        return {
+          data: {
+            ...old.data,
+            posts: old.data.posts.map((post: Post) => post.id === post.id ? { ...post, isPinned: !post.isPinned } : post)
+          }
+        };
+      });
+
+      return { previousData };
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Success',
+        description: post.isPinned ? 'Post unpinned successfully' : 'Post pinned successfully',
+      });
+    },
+    onError: (error: any, _, context) => {
+      if (context?.previousData)
+        queryClient.setQueryData(queryKey, context.previousData);
+
+      toast({
+        title: error.message || 'Error',
+        description: error.info || 'Failed to update post pin status',
+        variant: 'destructive'
+      });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey });
+    }
+  });
+
   const handleVote = (postId: number, voteType: 'up' | 'down') => {
     votePost({ postId, voteType });
   }
@@ -86,7 +131,8 @@ const PostOverview = ({
               key={post.id} 
               className={cn(
                 "rounded-lg border bg-card hover:border-border/80 transition-colors",
-                "group relative overflow-hidden"
+                "group relative overflow-hidden",
+                post.isPinned && showPinned && "border-primary/50"
               )}
             >
               <div className="px-4 py-3 space-y-3 dark:bg-gray-950">
@@ -139,6 +185,12 @@ const PostOverview = ({
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
+                      {post.isPinned && showPinned && (
+                        <div className="flex items-center gap-1 text-primary text-xs font-medium">
+                          <Pin className="h-3 w-3" />
+                          Pinned
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -150,7 +202,6 @@ const PostOverview = ({
                         className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
                       >
                         <MoreHorizontal className="h-4 w-4" />
-                        <span className="sr-only">Open menu</span>
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
@@ -168,6 +219,12 @@ const PostOverview = ({
                             Delete Post
                           </DropdownMenuItem>
                         </>
+                      )}
+                      {user?.isAdmin && showPinned && (
+                        <DropdownMenuItem onClick={() => togglePin()}>
+                          <Pin className="mr-2 h-4 w-4" />
+                          {post.isPinned ? 'Unpin Post' : 'Pin Post'}
+                        </DropdownMenuItem>
                       )}
                       <DropdownMenuItem onClick={() => setIsOpen(false)}>
                         <EyeOff className="mr-2 h-4 w-4" />

@@ -23,6 +23,7 @@ import { useToast } from "../ui/use-toast";
 import { useVoteComment } from "@/lib/hooks/use-vote-comment";
 import { useAuthStore } from "@/lib/stores/use-auth-store";
 import { useReplyStore } from "@/lib/stores/use-reply-store";
+import CommentDeleteWarning from "./comment-delete-warning";
 
 const CommentCard = ({
   comment,
@@ -39,6 +40,7 @@ const CommentCard = ({
   const [editContent, setEditContent] = useState(comment.content);
   const [isCollapsed, setIsCollapsed] = useState(true);
   const [replyContent, setReplyContent] = useState('');
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { voteComment } = useVoteComment(queryKey);
@@ -247,6 +249,7 @@ const CommentCard = ({
   const handleReply = () => {
     if (replyContent.trim()) {
       createReply(replyContent);
+      setIsCollapsed(false);
     }
   };
 
@@ -294,7 +297,12 @@ const CommentCard = ({
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={handleEditClick}>Edit</DropdownMenuItem>
-                <DropdownMenuItem className="text-destructive" onClick={() => deleteComment(comment.id)}>Delete</DropdownMenuItem>
+                <DropdownMenuItem 
+                  className="text-destructive cursor-pointer"
+                  onClick={() => setIsDeleteDialogOpen(true)}
+                >
+                  Delete
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -402,6 +410,12 @@ const CommentCard = ({
           ))}
         </div>
       )}
+      
+      <CommentDeleteWarning 
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        onDelete={() => deleteComment(comment.id)}
+      />
     </div>
   );
 };
