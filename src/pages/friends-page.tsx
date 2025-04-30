@@ -8,7 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/components/ui/use-toast";
-import { Search, UserMinus, UserPlus, Users, UserSearch } from "lucide-react";
+import { Search, UserMinus, UserPlus, Users } from "lucide-react";
 import { useState } from "react";
 import {
     Dialog,
