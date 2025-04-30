@@ -76,6 +76,7 @@ export interface Comment {
   user: User;
   children: Comment[];
   postId: number;
+  post: Post;
   parentId: number | null;
   createdAt: string;
   updatedAt: string;
