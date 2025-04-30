@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuthStore } from "@/lib/stores/use-auth-store";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Pencil, Check, X, ArrowUpDown, MessageSquare, FileText, Calendar, Trophy } from "lucide-react";
+import { ArrowLeft, Pencil, Check, X, ArrowUpDown, MessageSquare, FileText, Calendar, Trophy, UserPlus } from "lucide-react";
 import { useEffect, useState } from "react";
 import PostOverview from "@/components/posts/post-overview";
 import { Input } from "@/components/ui/input";
@@ -44,7 +44,12 @@ const usePostsQuery = (userId: string) => {
     queryKey: ['posts', userId],
     queryFn: () => api.get(`/post/user/${userId}`)
   });
-  return { data: (data?.data?.posts || []) as Post[], isLoading, error };
+  return { 
+    data: (data?.data?.posts || []) as Post[], 
+    totalCount: data?.data?.totalCount || 0,
+    isLoading, 
+    error 
+  };
 };
 
 const useCommentsQuery = (userId: string) => {
@@ -52,7 +57,11 @@ const useCommentsQuery = (userId: string) => {
     queryKey: ['comments', userId],
     queryFn: () => api.get(`/comment/user/${userId}`)
   });
-  return { data: (data?.data?.comments || []) as Comment[], isLoading, error };
+  return { data: (data?.data?.comments || []) as Comment[], 
+    totalCount: data?.data?.totalCount || 0, 
+    isLoading, 
+    error 
+  };
 };
 
 
@@ -64,8 +73,8 @@ const ProfilePage = () => {
     const queryClient = useQueryClient();
     const userId = id || currentUser?.id?.toString() || '';
     const { data: user, isLoading, error } = useUserQuery(userId);
-    const { data: posts, isLoading: postsLoading, error: postsError } = usePostsQuery(userId);
-    const { data: comments, isLoading: commentsLoading, error: commentsError } = useCommentsQuery(userId);
+    const { data: posts, totalCount, isLoading: postsLoading, error: postsError } = usePostsQuery(userId);
+    const { data: comments, totalCount: commentsTotalCount, isLoading: commentsLoading, error: commentsError } = useCommentsQuery(userId);
     const [isEditing, setIsEditing] = useState(false);
     const [displayName, setDisplayName] = useState('');
     const [sortBy, setSortBy] = useState<'new' | 'top'>('new');
@@ -91,6 +100,24 @@ const ProfilePage = () => {
             toast({
                 title: error.message || "Error",
                 description: error.info || "Failed to update display name",
+                variant: "destructive",
+            });
+        }
+    });
+
+    const { mutate: addFriend, isPending: isAddingFriend } = useMutation({
+        mutationFn: () => api.post(`user/friends/${userId}`),
+        onSuccess: () => {
+            toast({
+                title: "Success",
+                description: "Friend request sent successfully",
+            });
+            queryClient.invalidateQueries({ queryKey: ['user', userId] });
+        },
+        onError: (error: any) => {
+            toast({
+                title: error.message || "Error",
+                description: error.info || "Failed to send friend request",
                 variant: "destructive",
             });
         }
@@ -140,7 +167,7 @@ const ProfilePage = () => {
 
     const isOwnProfile = !id || currentUser?.id === user?.id;
 
-    return (
+    return ( 
         <div className="flex min-h-screen">
             {/* Left Sidebar - Hidden on mobile */}
             <div className="hidden md:block">
@@ -219,20 +246,35 @@ const ProfilePage = () => {
                                         </div>
                                         <div className="flex items-center gap-1">
                                             <Trophy className="h-4 w-4" />
-                                            <span>{posts?.length || 0} posts</span>
+                                            <span>{totalCount || posts?.length || 0} posts</span>
                                         </div>
                                         <div className="flex items-center gap-1">
                                             <MessageSquare className="h-4 w-4" />
-                                            <span>{comments?.length || 0} comments</span>
+                                            <span>{commentsTotalCount || comments?.length || 0} comments</span>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                             {!isOwnProfile && (
-                                <Button variant="outline" onClick={() => navigate(-1)} className="w-full sm:w-auto">
-                                    <ArrowLeft className="mr-2 h-4 w-4" />
-                                    Go Back
-                                </Button>
+                                <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                                    <Button 
+                                        variant="outline" 
+                                        onClick={() => navigate(-1)} 
+                                        className="w-full sm:w-auto"
+                                    >
+                                        <ArrowLeft className="mr-2 h-4 w-4" />
+                                        Go Back
+                                    </Button>
+                                    <Button
+                                        variant="default"
+                                        onClick={() => addFriend()}
+                                        disabled={isAddingFriend}
+                                        className="w-full sm:w-auto"
+                                    >
+                                        <UserPlus className="mr-2 h-4 w-4" />
+                                        {isAddingFriend ? "Adding..." : "Add Friend"}
+                                    </Button>
+                                </div>
                             )}
                         </div>
                     </Card>
@@ -462,7 +504,7 @@ const ProfilePage = () => {
                 </div>
             </div>
         </div>
-    );
+     );
 }
  
 export default ProfilePage;

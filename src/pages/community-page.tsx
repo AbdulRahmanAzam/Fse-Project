@@ -420,12 +420,17 @@ const CommunityPage = () => {
               ) : (
                 <div className="space-y-4">
                   {posts.map((post) => (
-                    <PostOverview
+                    <div 
                       key={post.id}
-                      post={{ ...post, community }}
-                      queryKey={['posts', id!]}
-                      showPinned={true}
-                    />
+                      className="cursor-pointer transition-colors hover:bg-accent/50 rounded-lg"
+                      onClick={() => navigate(`/community/${id}/post/${post.id}`)}
+                    >
+                      <PostOverview
+                        post={{ ...post, community }}
+                        queryKey={['posts', id!]}
+                        showPinned={true}
+                      />
+                    </div>
                   ))}
                 </div>
               )}

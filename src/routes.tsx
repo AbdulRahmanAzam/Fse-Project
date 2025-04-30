@@ -13,7 +13,7 @@ import PostPage from './pages/post-page'
 import NotFoundPage from './pages/not-found-page';
 import PendingPostsPage from './pages/pending-posts-page';
 import ProfilePage from './pages/profile-page'
-
+import FriendsPage from './pages/friends-page'
 function AppRoutes() {
   return (
     <Routes>
@@ -29,6 +29,7 @@ function AppRoutes() {
         <Route path="/pending-posts" element={<ProtectedRoute permission="admin"><PendingPostsPage /></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute permission="member"><ProfilePage /></ProtectedRoute>} />
         <Route path="/profile/:id" element={<ProtectedRoute permission="member"><ProfilePage /></ProtectedRoute>} />
+        <Route path="/friends" element={<ProtectedRoute permission="member"><FriendsPage /></ProtectedRoute>} />
       </Route>
       <Route path="*" element={<NotFoundPage />} />
     </Routes>

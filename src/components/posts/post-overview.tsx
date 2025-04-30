@@ -151,15 +151,28 @@ const PostOverview = ({
                       )}
                       <Button
                         variant="link"
-                        className="text-sm font-medium p-0 h-auto"
-                        onClick={() => navigate(`/community/${post.community.id}`)}
+                        className="text-sm font-medium p-0 h-auto hover:text-foreground"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/community/${post.community.id}`);
+                        }}
                       >
                         {post.community.name}
                       </Button>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-muted-foreground">
-                        by {post.user.displayName || post.user.username}
+                        by{" "}
+                        <Button
+                          variant="link"
+                          className="text-xs text-muted-foreground p-0 h-auto hover:text-foreground"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/profile/${post.user.id}`);
+                          }}
+                        >
+                          {post.user.displayName || post.user.username}
+                        </Button>
                       </span>
                       <TooltipProvider>
                         <Tooltip>

@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-
+import { useNavigate } from "react-router-dom";
 import api from "@/lib/api";
 
 import { Post } from "@/lib/api.d";
@@ -19,6 +19,7 @@ const usePostsQuery = () => {
 
 const FeedComponent = () => {
   const { data: posts, isLoading, error, refetch } = usePostsQuery();
+  const navigate = useNavigate();
 
   return (
     <ScrollArea className="h-[calc(100vh-4rem)]">
@@ -53,13 +54,18 @@ const FeedComponent = () => {
             ))}
           </div>
         ) : posts.length > 0 ? (
-          posts.map((post, index) =>
-            <PostOverview
+          posts.map((post, index) => (
+            <div 
               key={index}
-              post={post}
-              queryKey={['posts']}
-            />
-          )
+              className="cursor-pointer transition-colors hover:bg-accent/50 rounded-lg"
+              onClick={() => navigate(`/community/${post.community.id}/post/${post.id}`)}
+            >
+              <PostOverview
+                post={post}
+                queryKey={['posts']}
+              />
+            </div>
+          ))
         ) : (
           <div className='flex flex-col gap-4 items-center justify-center'>
             <p className='text-gray-500'>Nothing here yet...</p>
