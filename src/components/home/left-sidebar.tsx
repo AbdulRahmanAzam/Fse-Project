@@ -87,7 +87,7 @@ const CommunityItem = ({ community }: { community: Community }) => {
       onClick={() => navigate(`/community/${community.id}`)}
     >
       <div className="w-8 h-8 rounded-full bg-gray-300 flex-shrink-0"></div>
-      <div className="ml-2">
+      <div className="ml-2 text-left w-full">
         <p className="text-sm font-medium">{community.name}</p>
         <p className="text-xs text-gray-500">{community.memberCount} members</p>
       </div>
