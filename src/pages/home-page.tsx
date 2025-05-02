@@ -7,7 +7,7 @@ const HomePage = () => {
     <div className="flex min-h-screen">
       <LeftSidebar />
 
-      <main className="flex-1 border-x border-gray-200 dark:border-gray-800">
+      <main className="flex-1">
         <div className="container max-w-4xl mx-auto py-4 px-2">
           <FeedComponent />
         </div>

@@ -92,7 +92,7 @@ const FriendsPage = () => {
         onSuccess: () => {
             toast({
                 title: "Success",
-                description: "Friend request sent successfully",
+                description: "Friend added successfully",
             });
             queryClient.invalidateQueries({ queryKey: ['friends'] });
             setShowAddDialog(false);
@@ -102,7 +102,7 @@ const FriendsPage = () => {
         onError: (error: any) => {
             toast({
                 title: error.message || "Error",
-                description: error.info || "Failed to send friend request",
+                description: error.info || "Failed to add friend",
                 variant: "destructive",
             });
         }

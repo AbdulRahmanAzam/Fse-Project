@@ -295,7 +295,11 @@ const CommunityPage = () => {
                         <ScrollArea className="h-[calc(100vh-4rem)]">
                           <div className="px-4 py-2 space-y-4">
                             {community.members?.sort((a, b) => (a.role === 'admin' ? -1 : 1) - (b.role === 'admin' ? -1 : 1)).map((member, index) => (
-                              <div key={index} className="flex items-center gap-3">
+                              <div
+                                key={index}
+                                className="flex items-center gap-3 cursor-pointer"
+                                onClick={() => navigate(`/profile/${member.id}`)}
+                              >
                                 <Avatar className="h-10 w-10">
                                   <AvatarImage src={member.avatar} alt={member.username} />
                                   <AvatarFallback>
@@ -383,57 +387,59 @@ const CommunityPage = () => {
                 )}
               </div>
 
-              {postsLoading ? (
-                <div className="space-y-4">
-                  {Array(3).fill(0).map((_, i) => (
-                    <div key={i} className="rounded-lg border bg-card p-4 space-y-4">
-                      <div className="flex items-center gap-2">
-                        <Skeleton className="h-6 w-6 rounded-full" />
-                        <Skeleton className="h-4 w-24" />
+              <ScrollArea className="h-[600px] pr-4">
+                {postsLoading ? (
+                  <div className="space-y-4">
+                    {Array(3).fill(0).map((_, i) => (
+                      <div key={i} className="rounded-lg border bg-card p-4 space-y-4">
+                        <div className="flex items-center gap-2">
+                          <Skeleton className="h-6 w-6 rounded-full" />
+                          <Skeleton className="h-4 w-24" />
+                        </div>
+                        <Skeleton className="h-4 w-3/4" />
+                        <Skeleton className="h-4 w-full" />
+                        <div className="flex items-center gap-4">
+                          <Skeleton className="h-8 w-16" />
+                          <Skeleton className="h-8 w-16" />
+                        </div>
                       </div>
-                      <Skeleton className="h-4 w-3/4" />
-                      <Skeleton className="h-4 w-full" />
-                      <div className="flex items-center gap-4">
-                        <Skeleton className="h-8 w-16" />
-                        <Skeleton className="h-8 w-16" />
+                    ))}
+                  </div>
+                ) : postsError ? (
+                  <div className="flex flex-col items-center justify-center p-8 gap-4">
+                    <div className="text-center text-red-500">Error loading posts</div>
+                    <Button variant="outline" onClick={() => postsRefetch()}>Retry</Button>
+                  </div>
+                ) : posts.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center p-8 gap-4">
+                    <p className="text-muted-foreground text-center">No posts yet</p>
+                    {community.isMember && (
+                      <Button
+                        variant="outline"
+                        onClick={() => navigate(`/community/${id}/create-post`)}
+                      >
+                        Create First Post
+                      </Button>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {posts.map((post) => (
+                      <div 
+                        key={post.id}
+                        className="cursor-pointer transition-colors hover:bg-accent/50 rounded-lg"
+                        onClick={() => navigate(`/community/${id}/post/${post.id}`)}
+                      >
+                        <PostOverview
+                          post={{ ...post, community }}
+                          queryKey={['posts', id!]}
+                          showPinned={true}
+                        />
                       </div>
-                    </div>
-                  ))}
-                </div>
-              ) : postsError ? (
-                <div className="flex flex-col items-center justify-center p-8 gap-4">
-                  <div className="text-center text-red-500">Error loading posts</div>
-                  <Button variant="outline" onClick={() => postsRefetch()}>Retry</Button>
-                </div>
-              ) : posts.length === 0 ? (
-                <div className="flex flex-col items-center justify-center p-8 gap-4">
-                  <p className="text-muted-foreground text-center">No posts yet</p>
-                  {community.isMember && (
-                    <Button
-                      variant="outline"
-                      onClick={() => navigate(`/community/${id}/create-post`)}
-                    >
-                      Create First Post
-                    </Button>
-                  )}
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {posts.map((post) => (
-                    <div 
-                      key={post.id}
-                      className="cursor-pointer transition-colors hover:bg-accent/50 rounded-lg"
-                      onClick={() => navigate(`/community/${id}/post/${post.id}`)}
-                    >
-                      <PostOverview
-                        post={{ ...post, community }}
-                        queryKey={['posts', id!]}
-                        showPinned={true}
-                      />
-                    </div>
-                  ))}
-                </div>
-              )}
+                    ))}
+                  </div>
+                )}
+              </ScrollArea>
             </div>
           </div>
 
@@ -453,7 +459,11 @@ const CommunityPage = () => {
                     {community.members
                       ?.sort((a, b) => (a.role === 'admin' ? -1 : 1) - (b.role === 'admin' ? -1 : 1))
                       .map((member, index) => (
-                        <div key={index} className="flex items-center gap-3">
+                        <div
+                          key={index}
+                          className="flex items-center gap-3 cursor-pointer"
+                          onClick={() => navigate(`/profile/${member.id}`)}
+                        >
                           <Avatar className="h-8 w-8">
                             <AvatarImage src={member.avatar} alt={member.username} />
                             <AvatarFallback>

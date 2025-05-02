@@ -51,6 +51,8 @@ interface User {
   email: string;
   displayName: string;
   role: 'member' | 'admin';
+  isMutualFriend?: boolean;
+  isFriend?: boolean;
   isAdmin: boolean;
   createdAt: string;
   updatedAt: string;

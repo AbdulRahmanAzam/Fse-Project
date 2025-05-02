@@ -114,20 +114,6 @@ const CreateCommunityPage = () => {
                   placeholder="e.g. gaming, technology, art"
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="image">Community Image URL (optional)</Label>
-                <Input
-                  id="image"
-                  {...register("image", {
-                    pattern: {
-                      value: /^https?:\/\/.+/,
-                      message: "Must be a valid URL"
-                    }
-                  })}
-                  placeholder="https://example.com/image.jpg"
-                />
-                {errors.image && <p className="text-xs text-red-500 dark:text-red-400">{errors.image.message}</p>}
-              </div>
             </CardContent>
             <CardFooter className="flex justify-end gap-2">
               <Button
