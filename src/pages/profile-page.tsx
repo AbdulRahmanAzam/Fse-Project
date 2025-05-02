@@ -1,13 +1,13 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
-import { User, Post, Comment } from "@/lib/api.d";
+import { User, Post, Comment, Community } from "@/lib/api.d";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuthStore } from "@/lib/stores/use-auth-store";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Pencil, Check, X, ArrowUpDown, MessageSquare, FileText, Calendar, Trophy, UserPlus } from "lucide-react";
+import { ArrowLeft, Pencil, Check, X, ArrowUpDown, MessageSquare, FileText, Calendar, Trophy, UserPlus, Users2, UserMinus } from "lucide-react";
 import { useEffect, useState } from "react";
 import PostOverview from "@/components/posts/post-overview";
 import { Input } from "@/components/ui/input";
@@ -19,7 +19,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import CommentCard from "@/components/comments/comment-card";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -64,10 +64,18 @@ const useCommentsQuery = (userId: string) => {
   };
 };
 
+const useCommunitiesQuery = (userId: string) => {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['user-communities', userId],
+    queryFn: () => api.get(`/community/user/${userId}`)
+  });
+  return { data: (data?.data?.communities || []) as Community[], isLoading, error };
+};
 
 const ProfilePage = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
     const { user: currentUser } = useAuthStore();
     const { toast } = useToast();
     const queryClient = useQueryClient();
@@ -75,6 +83,7 @@ const ProfilePage = () => {
     const { data: user, isLoading, error } = useUserQuery(userId);
     const { data: posts, totalCount, isLoading: postsLoading, error: postsError } = usePostsQuery(userId);
     const { data: comments, totalCount: commentsTotalCount, isLoading: commentsLoading, error: commentsError } = useCommentsQuery(userId);
+    const { data: communities, isLoading: communitiesLoading, error: communitiesError } = useCommunitiesQuery(userId);
     const [isEditing, setIsEditing] = useState(false);
     const [displayName, setDisplayName] = useState('');
     const [sortBy, setSortBy] = useState<'new' | 'top'>('new');
@@ -105,30 +114,44 @@ const ProfilePage = () => {
         }
     });
 
-    const { mutate: addFriend, isPending: isAddingFriend } = useMutation({
-        mutationFn: () => api.post(`user/friends/${userId}`),
-        onSuccess: () => {
+    const { mutate: setFriend, isPending: isSettingFriend } = useMutation({
+        mutationFn: ({ status }: { status: boolean }) =>
+            status ? api.post(`user/friends/${userId}`) : api.delete(`user/friends/${userId}`),
+        onMutate: ({ status }: { status: boolean }) => {
+            queryClient.cancelQueries({ queryKey: ['user', userId] });
+
+            const previousUser = queryClient.getQueryData<any>(["user", userId]);
+            queryClient.setQueryData(['user', userId], (old: any) => {
+                const optimisticUser: User = {
+                    ...old.data.user,
+                    isFriend: status,
+                    isMutualFriend: old.data.user.isMutualFriend && status
+                };
+                return { data: { user: optimisticUser } };
+            });
+            return { previousUser };
+        },
+        onSuccess: (_, { status }: { status: boolean }) => {
             toast({
                 title: "Success",
-                description: "Friend request sent successfully",
+                description: status ? "Friend added successfully" : "Friend removed successfully",
             });
             queryClient.invalidateQueries({ queryKey: ['user', userId] });
         },
-        onError: (error: any) => {
+        onError: (error: any, _variables, context) => {
+            if (context?.previousUser)
+                queryClient.setQueryData(['user', userId], context?.previousUser);
+
             toast({
                 title: error.message || "Error",
-                description: error.info || "Failed to send friend request",
+                description: error.info || "Failed to add friend",
                 variant: "destructive",
             });
+        },
+        onSettled: () => {
+            queryClient.invalidateQueries({ queryKey: ['user', userId] });
         }
     });
-
-    // If no ID is provided and we're not logged in, redirect to auth
-    useEffect(() => {
-        if (!id && !currentUser) {
-            navigate('/auth');
-        }
-    }, [id, currentUser, navigate]);
 
     const sortedPosts = posts ? [...posts].sort((a, b) => {
         if (sortBy === 'new') {
@@ -180,10 +203,20 @@ const ProfilePage = () => {
                     {/* Profile Header */}
                     <Card className="p-4 sm:p-6 mb-4 sm:mb-8">
                         <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
-                            <Avatar className="h-20 w-20 sm:h-24 sm:w-24 border-4 border-background shadow-lg">
-                                <AvatarImage src={user?.avatar} />
-                                <AvatarFallback className="text-xl sm:text-2xl">{user?.username?.charAt(0).toUpperCase()}</AvatarFallback>
-                            </Avatar>
+                            <div className="relative">
+                                <Avatar className="h-20 w-20 sm:h-24 sm:w-24 border-4 border-background shadow-lg">
+                                    <AvatarImage src={user?.avatar} />
+                                    <AvatarFallback className="text-xl sm:text-2xl">{user?.username?.charAt(0).toUpperCase()}</AvatarFallback>
+                                </Avatar>
+                                {user?.isMutualFriend && (
+                                    <div className="absolute -top-2 -right-2">
+                                        <div className="bg-green-500 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
+                                            <Check className="h-3 w-3" />
+                                            <span>Mutual</span>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
                             <div className="flex-1 text-center sm:text-left">
                                 <div className="flex flex-col sm:flex-row items-center sm:items-start gap-2">
                                     {isEditing ? (
@@ -266,13 +299,13 @@ const ProfilePage = () => {
                                         Go Back
                                     </Button>
                                     <Button
-                                        variant="default"
-                                        onClick={() => addFriend()}
-                                        disabled={isAddingFriend}
+                                        variant={user?.isFriend ? "destructive" : "default"}
+                                        onClick={() => user?.isFriend ? setFriend({ status: false }) : setFriend({ status: true })}
+                                        disabled={isSettingFriend}
                                         className="w-full sm:w-auto"
                                     >
-                                        <UserPlus className="mr-2 h-4 w-4" />
-                                        {isAddingFriend ? "Adding..." : "Add Friend"}
+                                        {user?.isFriend ? <UserMinus className="mr-2 h-4 w-4" /> : <UserPlus className="mr-2 h-4 w-4" />}
+                                        {isSettingFriend ? "Loading..." : user?.isFriend ? "Remove Friend" : "Add Friend"}
                                     </Button>
                                 </div>
                             )}
@@ -318,8 +351,8 @@ const ProfilePage = () => {
 
                     {/* Tabs */}
                     <Card className="p-4 sm:p-6">
-                        <Tabs defaultValue="posts" className="w-full">
-                            <TabsList className="grid w-full grid-cols-2 mb-4 sm:mb-6">
+                        <Tabs defaultValue={location.state?.defaultTab || "posts"} className="w-full">
+                            <TabsList className="grid w-full grid-cols-3 mb-4 sm:mb-6">
                                 <TabsTrigger value="posts" className="flex items-center gap-2 py-2 sm:py-3">
                                     <FileText className="h-4 w-4" />
                                     <span className="hidden sm:inline">Posts</span>
@@ -327,6 +360,10 @@ const ProfilePage = () => {
                                 <TabsTrigger value="comments" className="flex items-center gap-2 py-2 sm:py-3">
                                     <MessageSquare className="h-4 w-4" />
                                     <span className="hidden sm:inline">Comments</span>
+                                </TabsTrigger>
+                                <TabsTrigger value="communities" className="flex items-center gap-2 py-2 sm:py-3">
+                                    <Users2 className="h-4 w-4" />
+                                    <span className="hidden sm:inline">Communities</span>
                                 </TabsTrigger>
                             </TabsList>
                             <TabsContent value="posts" className="mt-0">
@@ -404,7 +441,6 @@ const ProfilePage = () => {
                                                     <PostOverview
                                                         post={post}
                                                         queryKey={['posts', userId]}
-                                                        showPinned={true}
                                                     />
                                                 </div>
                                                 {index < sortedPosts.length - 1 && <Separator className="my-4" />}
@@ -496,6 +532,82 @@ const ProfilePage = () => {
                                                     {index < comments.length - 1 && <Separator className="my-4" />}
                                                 </div>
                                             ))}
+                                    </div>
+                                )}
+                            </TabsContent>
+                            <TabsContent value="communities" className="mt-0">
+                                {communitiesError ? (
+                                    <div className="flex flex-col items-center justify-center py-8 gap-4">
+                                        <div className="text-center text-red-500">Error loading communities</div>
+                                        <Button variant="outline" onClick={() => window.location.reload()}>
+                                            Try Again
+                                        </Button>
+                                    </div>
+                                ) : communitiesLoading ? (
+                                    <div className="space-y-4">
+                                        {Array(3).fill(0).map((_, i) => (
+                                            <div key={i} className="rounded-lg border bg-card p-4 space-y-4">
+                                                <div className="flex items-center gap-3">
+                                                    <Skeleton className="h-8 w-8 rounded-full" />
+                                                    <div className="space-y-1">
+                                                        <Skeleton className="h-4 w-32" />
+                                                        <Skeleton className="h-3 w-24" />
+                                                    </div>
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Skeleton className="h-4 w-full" />
+                                                    <Skeleton className="h-4 w-2/3" />
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : communities?.length === 0 ? (
+                                    <div className="text-center py-8 text-muted-foreground">
+                                        No communities joined yet
+                                    </div>
+                                ) : (
+                                    <div className="space-y-4">
+                                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                                            <Badge variant="secondary" className="text-sm">
+                                                {communities.length} {communities.length === 1 ? 'community' : 'communities'}
+                                            </Badge>
+                                        </div>
+                                        <Separator className="my-4" />
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            {communities.map((community) => (
+                                                <Card key={community.id} className="group hover:border-border/80 transition-colors">
+                                                    <CardContent className="p-4">
+                                                        <div className="flex items-center gap-4">
+                                                            <Avatar className="h-12 w-12">
+                                                                <AvatarImage src={community.image} alt={community.name} />
+                                                                <AvatarFallback>
+                                                                    {community.name.charAt(0).toUpperCase()}
+                                                                </AvatarFallback>
+                                                            </Avatar>
+                                                            <div className="flex-1 min-w-0">
+                                                                <div className="flex items-center gap-2">
+                                                                    <Button
+                                                                        variant="link"
+                                                                        className="text-base font-semibold p-0 h-auto hover:text-foreground"
+                                                                        onClick={() => navigate(`/community/${community.id}`)}
+                                                                    >
+                                                                        {community.name}
+                                                                    </Button>
+                                                                </div>
+                                                                <p className="text-sm text-muted-foreground truncate">
+                                                                    {community.memberCount.toLocaleString()} members
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                        {community.description && (
+                                                            <p className="mt-2 text-sm text-muted-foreground line-clamp-2">
+                                                                {community.description}
+                                                            </p>
+                                                        )}
+                                                    </CardContent>
+                                                </Card>
+                                            ))}
+                                        </div>
                                     </div>
                                 )}
                             </TabsContent>

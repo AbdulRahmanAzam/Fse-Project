@@ -25,7 +25,7 @@ const RightSidebar = () => {
   const [showEventsDialog, setShowEventsDialog] = useState(false);
 
   return (
-    <div className="w-80 p-4 hidden lg:block bg-white dark:bg-gray-950 h-screen sticky top-0 overflow-y-auto">
+    <div className="w-80 p-4 hidden lg:block bg-white dark:bg-gray-950 h-screen sticky top-0 overflow-y-auto border-l border-gray-200 dark:border-gray-800">
       {/* Calendar Component */}
       <div className="mt-6">
         <Calendar />

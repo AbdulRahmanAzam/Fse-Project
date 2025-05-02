@@ -18,7 +18,7 @@ const LeftSidebar = () => {
   const { data: communities, isLoading, error, refetch } = useCommunitiesQuery();
 
   return (
-    <div className="w-64 p-4 hidden md:block bg-white dark:bg-gray-950 h-screen sticky top-0">
+    <div className="w-64 p-4 hidden md:block bg-white dark:bg-gray-950 h-screen sticky top-0 border-r border-gray-200 dark:border-gray-800">
       <div className="flex items-center mb-8">
         <img src="../src/assets/genz-logo2.png" alt="" className='w-10 h-10' />
         <h1 className="text-2xl font-bold">GenZ Scholars</h1>
@@ -26,12 +26,11 @@ const LeftSidebar = () => {
       </div>
 
       <nav className="space-y-2">
-        <NavItem icon="🏠" label="Home" href="/" active />
-        <NavItem icon="👤" label="Profile" href="/profile" />
-        <NavItem icon="🔍" label="Explore Communities" href="/communities" />
-        <NavItem icon="🤝" label="Friends" href="/friends" />
+        <NavItem icon="🏠" label="Home" href="/" active={location.pathname === '/'} />
+        <NavItem icon="👤" label="Profile" href="/profile" active={location.pathname === '/profile'} />
+        <NavItem icon="🔍" label="Explore Communities" href="/communities" active={location.pathname === '/communities'} />
+        <NavItem icon="🤝" label="Friends" href="/friends" active={location.pathname === '/friends'} />
       </nav>
-
       
       <div className="mt-8">
         <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-2">My Communities</h2>
@@ -56,7 +55,7 @@ const LeftSidebar = () => {
         {communities.length > 0 && <Button
           variant="link"
           className="mt-4 w-full text-sm text-primary flex justify-center py-2"
-          onClick={() => navigate('/profile#communities')}
+          onClick={() => navigate('/profile', { state: { defaultTab: 'communities' } })}
         >
           See All
         </Button>}
