@@ -5,10 +5,10 @@ import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ModeToggle } from '@/components/theme/mode-toggle'
 import { Eye, EyeOff, Mail, Lock, Loader2, Info } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import api from '@/lib/api'
-import type { ApiResponse, ApiResponseError } from '@/lib/api.d'
+import type { ApiResponseError } from '@/lib/api.d'
 import { useMutation } from '@tanstack/react-query'
 import { useToast } from '@/components/ui/use-toast'
 import { useAuthStore } from '@/lib/stores/use-auth-store'
@@ -63,6 +63,7 @@ const AuthPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const { register: loginRegister, handleSubmit: handleLoginSubmit, formState: { errors: loginErrors }, reset: resetLogin } = useForm<LoginFormData>();
   const { register: registerRegister, handleSubmit: handleRegisterSubmit, formState: { errors: registerErrors }, reset: resetRegister } = useForm<RegisterFormData>();
+  const navigate = useNavigate();
 
   const { mutate: loginFn, isPending: isLoginLoading, isSuccess: isLoginSuccess } = useMutation({
     mutationFn: (data: LoginFormData) => {
@@ -85,8 +86,8 @@ const AuthPage = () => {
     mutationFn: (data: RegisterFormData) => {
       return api.post('/user/register', { ...data, role: 'member' });
     },
-    onSuccess: (data: ApiResponse) => {
-      login(data.user, data.token);
+    onSuccess: () => {
+      navigate('/redirect');
     },
     onError: (error: ApiResponseError) => {
       setError(error.message);

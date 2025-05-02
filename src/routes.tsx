@@ -14,10 +14,15 @@ import NotFoundPage from './pages/not-found-page';
 import PendingPostsPage from './pages/pending-posts-page';
 import ProfilePage from './pages/profile-page'
 import FriendsPage from './pages/friends-page'
+import VerificationPage from './pages/verification-page'
+import RedirectPage from './pages/redirect-page'
+
 function AppRoutes() {
   return (
     <Routes>
       <Route path="/auth" element={<PublicRoute><AuthPage /></PublicRoute>} />
+      <Route path="/verify" element={<PublicRoute><VerificationPage /></PublicRoute>} />
+      <Route path="/redirect" element={<PublicRoute><RedirectPage /></PublicRoute>} />
       <Route path="/" element={<ProtectedRoute permission="member"><MainLayout /></ProtectedRoute>}>
         <Route index element={<HomePage />} />
         <Route path="/communities" element={<CommunitiesPage />} />
