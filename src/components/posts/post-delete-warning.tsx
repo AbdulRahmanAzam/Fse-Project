@@ -20,10 +20,14 @@ const PostDeleteWarning = ({
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
+            <Button variant="outline" onClick={(e) => {
+              e.stopPropagation();
+              onOpenChange(false);
+            }}>
               Cancel
             </Button>
-            <Button variant="destructive" onClick={() => {
+            <Button variant="destructive" onClick={(e) => {
+              e.stopPropagation();
               onDelete();
               onOpenChange(false);
             }}>

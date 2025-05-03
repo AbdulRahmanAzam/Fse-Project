@@ -30,6 +30,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
 
 
 type CommentFormData = {
@@ -375,9 +376,7 @@ const PostPage = () => {
                 </div>
               )}
 
-              <div className="prose dark:prose-invert max-w-none text-sm sm:text-base">
-                {post?.content}
-              </div>
+              <MarkdownRenderer content={post?.content || ''} className="text-sm sm:text-base" />
 
               {post?.files && post.files.length > 0 && (
                 <div className="mt-4 space-y-2">

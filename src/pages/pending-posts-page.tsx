@@ -8,6 +8,7 @@ import { AlertCircle, CheckCircle2, FileIcon, XCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/components/ui/use-toast";
 import { usePendingPostsQuery } from "@/lib/hooks/use-pending-posts";
+import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
 
 const useApproveRejectPostMutation = () => {
   const { toast } = useToast();
@@ -165,9 +166,7 @@ export default function PendingPostsPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="prose prose-sm dark:prose-invert max-w-none">
-                <p className="text-muted-foreground whitespace-pre-wrap">{post.content}</p>
-              </div>
+              <MarkdownRenderer content={post.content} className="text-sm" />
               {post.image && (
                 <div className="mt-4 rounded-lg overflow-hidden border">
                   <img 

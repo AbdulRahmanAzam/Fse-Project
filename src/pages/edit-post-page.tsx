@@ -38,6 +38,7 @@ const EditPostPage = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [existingFiles, setExistingFiles] = useState<PostFile[]>([]);
+  const [deletedFiles, setDeletedFiles] = useState<PostFile[]>([]);
 
   useEffect(() => {
     if (post) {
@@ -105,7 +106,11 @@ const EditPostPage = () => {
   };
 
   const removeExistingFile = (fileId: number) => {
-    setExistingFiles(prev => prev.filter(file => file.id !== fileId));
+    const fileToDelete = existingFiles.find(file => file.id === fileId);
+    if (fileToDelete) {
+      setDeletedFiles(prev => [...prev, fileToDelete]);
+      setExistingFiles(prev => prev.filter(file => file.id !== fileId));
+    }
   };
 
   const { mutate: updatePost, isPending } = useMutation({
@@ -114,12 +119,16 @@ const EditPostPage = () => {
       formData.append('title', data.title);
       formData.append('content', data.content.trim() ?? '');
       
-      formData.append('existingFiles', JSON.stringify(existingFiles.map(file => file.path)));
+      formData.append('currentFiles', JSON.stringify(existingFiles.map(file => file.path)));
+      
+      formData.append('deletedFiles', JSON.stringify(deletedFiles.map(file => file.path)));
       
       const currentFiles = watch('files');
-      if (currentFiles) {
+      if (currentFiles && selectedFiles.length > 0) {
         Array.from(currentFiles).forEach(file => {
-          formData.append('files', file);
+          if (selectedFiles.some(selectedFile => selectedFile.name === file.name)) {
+            formData.append('files', file);
+          }
         });
       }
       

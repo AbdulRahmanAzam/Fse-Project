@@ -180,7 +180,34 @@ const CommentCard = ({
                   },
                   postId: parseInt(postId),
                   parentId: comment.id,
-                  children: []
+                  children: [],
+                  post: {
+                    id: parseInt(postId),
+                    title: '',
+                    content: '',
+                    user: user || {
+                      id: 0,
+                      username: 'Anonymous',
+                      displayName: 'Anonymous',
+                      email: '',
+                      role: 'member',
+                      isAdmin: false,
+                      createdAt: new Date().toISOString(),
+                      updatedAt: new Date().toISOString(),
+                      avatar: undefined
+                    },
+                    community: {
+                      id: 0,
+                      name: '',
+                      tags: ''
+                    },
+                    fileCount: 0,
+                    isPinned: false,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString(),
+                    upvotes: 0,
+                    downvotes: 0
+                  }
                 },
                 ...(c.children || [])
               ]

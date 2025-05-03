@@ -73,7 +73,7 @@ const CreatePostPage = () => {
       return;
     }
     
-    const invalidFiles = files.filter(file => file.size > 5 * 1024 * 1024);
+    const invalidFiles = files.filter(file => file.size > 2 * 1024 * 1024);
     if (invalidFiles.length > 0) {
       toast({
         title: 'Error',
@@ -248,7 +248,7 @@ const CreatePostPage = () => {
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Supported formats: PDF, DOC, DOCX, TXT, JPG, PNG, GIF (max 5MB per file)
+                  Supported formats: PDF, DOC, DOCX, TXT, JPG, PNG, GIF (max 2MB per file)
                 </p>
                 
                 {selectedFiles.length > 0 && (

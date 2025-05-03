@@ -231,9 +231,6 @@ const Header = () => {
                 <DropdownMenuItem asChild>
                   <Link to="/profile">Profile</Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/settings">Settings</Link>
-                </DropdownMenuItem>
                 <DropdownMenuItem onClick={logout}>
                   Sign Out
                 </DropdownMenuItem>
@@ -336,9 +333,6 @@ const Header = () => {
                       <>
                         <Button variant="ghost" className="w-full justify-start" asChild>
                           <Link to="/profile">Profile</Link>
-                        </Button>
-                        <Button variant="ghost" className="w-full justify-start" asChild>
-                          <Link to="/settings">Settings</Link>
                         </Button>
                         <Button variant="ghost" className="w-full justify-start text-destructive" onClick={logout}>
                           Sign Out

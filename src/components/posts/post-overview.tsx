@@ -22,6 +22,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "../ui/tooltip";
+import { MarkdownRenderer } from "../ui/markdown-renderer";
 
 const PostOverview = ({
   post,
@@ -134,6 +135,11 @@ const PostOverview = ({
                 "group relative overflow-hidden",
                 post.isPinned && showPinned && "border-primary/50"
               )}
+              onClick={(e) => {
+                if (!(e.target as HTMLElement).closest('[role="menuitem"]')) {
+                  navigate(`/community/${post.community.id}/post/${post.id}`);
+                }
+              }}
             >
               <div className="px-4 py-3 space-y-3 dark:bg-gray-950">
                 {/* Header */}
@@ -220,13 +226,21 @@ const PostOverview = ({
                     <DropdownMenuContent align="end">
                       {canModify && (
                         <>
-                          <DropdownMenuItem onClick={() => navigate(`/community/${post.community.id}/edit-post/${post.id}`)}>
+                          <DropdownMenuItem 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/community/${post.community.id}/edit-post/${post.id}`);
+                            }}
+                          >
                             <Pencil className="mr-2 h-4 w-4" />
                             Edit Post
                           </DropdownMenuItem>
                           <DropdownMenuItem 
                             className="text-destructive focus:text-destructive"
-                            onClick={() => setShowDeleteDialog(true)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setShowDeleteDialog(true);
+                            }}
                           >
                             <Trash2 className="mr-2 h-4 w-4" />
                             Delete Post
@@ -234,12 +248,22 @@ const PostOverview = ({
                         </>
                       )}
                       {user?.isAdmin && showPinned && (
-                        <DropdownMenuItem onClick={() => togglePin()}>
+                        <DropdownMenuItem 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            togglePin();
+                          }}
+                        >
                           <Pin className="mr-2 h-4 w-4" />
                           {post.isPinned ? 'Unpin Post' : 'Pin Post'}
                         </DropdownMenuItem>
                       )}
-                      <DropdownMenuItem onClick={() => setIsOpen(false)}>
+                      <DropdownMenuItem 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsOpen(false);
+                        }}
+                      >
                         <EyeOff className="mr-2 h-4 w-4" />
                         Hide post
                       </DropdownMenuItem>
@@ -248,9 +272,11 @@ const PostOverview = ({
                 </div>
 
                 {/* Content */}
-                <div className="ml-2 space-y-3">
+                <div className="space-y-2">
                   <h1 className="text-lg font-semibold leading-tight line-clamp-2">{post.title}</h1>
-                  <p className="text-sm text-muted-foreground line-clamp-5">{post.content}</p>
+                  <div className="line-clamp-5">
+                    <MarkdownRenderer content={post.content} className="text-sm text-muted-foreground" />
+                  </div>
                 </div>
 
                 {/* Image */}
