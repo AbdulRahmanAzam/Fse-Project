@@ -251,7 +251,7 @@ const EditPostPage = () => {
                     type="file"
                     className="hidden"
                     multiple
-                    accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.gif"
+                    accept=".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
                     {...register('files')}
                     onChange={handleFileChange}
                     ref={fileInputRef}
@@ -268,7 +268,7 @@ const EditPostPage = () => {
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Supported formats: PDF, DOC, DOCX, TXT, JPG, PNG, GIF (max 5MB per file)
+                  Supported formats: JPG, JPEG, PNG, GIF, PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX (max 5MB per file)
                 </p>
                 
                 {existingFiles.length > 0 && (
