@@ -6,6 +6,7 @@ import './index.css'
 import { ThemeProvider } from '@/components/theme/theme-provider'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from './components/ui/toaster'
+import ParticleTrail from './components/ui/particle-trail'
 
 const queryClient = new QueryClient();
 
@@ -20,6 +21,7 @@ const Providers = ({ children }: PropsWithChildren) => {
         </ThemeProvider>
       </QueryClientProvider>
       <Toaster />
+      <ParticleTrail />
     </>
   )
 }
